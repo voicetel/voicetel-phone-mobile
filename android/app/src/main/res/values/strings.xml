@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VoiceTel Phone</string>
+    <string name="title_activity_main">VoiceTel Phone</string>
+    <string name="package_name">com.voicetel.phone</string>
+    <string name="custom_url_scheme">com.voicetel.phone</string>
+</resources>
