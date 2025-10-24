@@ -852,15 +852,9 @@
 
 		<script src="https://cdn.jsdelivr.net/npm/sip.js@0.15.11/dist/sip.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
-		<script type="module">
-			import { App } from '@capacitor/app';
-			import { Capacitor } from '@capacitor/core';
-			
-			// Make App and Capacitor available globally
-			window.App = App;
-			window.Capacitor = Capacitor;
-		</script>
 		<script>
+			// Capacitor will be available at runtime
+			// We'll check for it in the app state listeners
 			// Constants
 			const INCOMING_CALL_TIMEOUT_MS = 30000;
 			const DTMF_DURATION_MS = 250;
@@ -1012,6 +1006,8 @@
 			let incomingCallTimeout = null;
 			let isRegistered = false;
 			let isMuted = false;
+			let isRegistering = false; // Lock to prevent multiple registrations
+			let reRegisterTimeout = null; // Debounce re-registration
 			let callTimer = null;
 			let callStartTime = null;
 			let ringingAudio = null;
@@ -1128,6 +1124,9 @@
 
 			// Logging function
 			function log(message) {
+				// Log to console for logcat capture
+				console.log(message);
+				
 				const logDiv = document.getElementById("log");
 				const entry = document.createElement("div");
 				entry.className = "log-entry";
@@ -1160,6 +1159,11 @@
 					return;
 				}
 
+				if (isRegistering) {
+					log("Registration already in progress - ignoring duplicate request");
+					return;
+				}
+
 				const server = document.getElementById("sipServer").value;
 				const username = document.getElementById("username").value;
 				const password = document.getElementById("password").value;
@@ -1171,6 +1175,8 @@
 					alert("Please fill in all required fields");
 					return;
 				}
+
+				isRegistering = true;
 
 				if (!isValidUsername(username)) {
 					alert("Username must be exactly 10 numeric digits");
@@ -1190,8 +1196,8 @@
 					const transportOptions = {
 						wsServers: [server],
 						traceSip: true,
-						wsServerMaxReconnectionAttempts: 5,
-						wsServerReconnectionTimeout: 4,
+						wsServerMaxReconnectionAttempts: 0, // Disable automatic reconnection
+						wsServerReconnectionTimeout: 0, // No timeout
 					};
 
 					const userAgentOptions = {
@@ -1200,7 +1206,7 @@
 						authorizationUser: username,
 						password: password,
 						displayName: displayName,
-						register: true,
+						register: true, // Keep automatic registration
 						registerOptions: {
 							registrar: `sip:tls.voicetel.com`,
 							expires: SIP_REGISTRATION_EXPIRES_SEC,
@@ -1232,6 +1238,7 @@
 
 					userAgent.on("registered", () => {
 						isRegistered = true;
+						isRegistering = false; // Reset lock on successful registration
 						updateStatus("Registered", true);
 						log("Successfully registered");
 						log("SIP/2.0 200 OK");
@@ -1300,6 +1307,7 @@
 					log(`Registration failed: ${error.message}`);
 					updateStatus("Registration Failed");
 					console.error(error);
+					isRegistering = false; // Reset lock on error
 				}
 			}
 
@@ -2281,41 +2289,124 @@
 
 			// App state management for re-registration
 			function setupAppStateListeners() {
-				if (window.App && window.Capacitor && window.Capacitor.isNativePlatform()) {
-					// Listen for app state changes
-					window.App.addListener('appStateChange', ({ isActive }) => {
-						if (isActive) {
-							log('App brought to foreground - checking registration');
-							reRegister();
-						} else {
-							log('App moved to background');
-						}
-					});
-
-					// Listen for app restoration
-					window.App.addListener('appRestoredResult', () => {
-						log('App restored - checking registration');
+				log('Setting up app state listeners...');
+				
+				// Always set up visibility change listener as primary method
+				document.addEventListener('visibilitychange', function() {
+					log('Visibility change detected - document.hidden: ' + document.hidden);
+					if (!document.hidden) {
+						log('App brought to foreground (visibility) - WebSocket may have been killed, re-registering');
 						reRegister();
-					});
-				}
+					} else {
+						log('App moved to background (visibility) - WebSocket will likely be killed');
+					}
+				});
+				
+				log('Visibility change listener added');
+				
+				// Try to set up Capacitor listeners if available (only once)
+				setTimeout(() => {
+					if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+						log('Capacitor detected - setting up native app state listeners');
+						
+						// Try to access Capacitor App API
+						if (window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+							const App = window.Capacitor.Plugins.App;
+							
+							// Listen for app state changes (only one listener)
+							App.addListener('appStateChange', ({ isActive }) => {
+								if (isActive) {
+									log('App brought to foreground (Capacitor) - checking registration');
+									reRegister();
+								} else {
+									log('App moved to background (Capacitor)');
+								}
+							});
+							
+							log('Capacitor app state listeners configured');
+						} else {
+							log('Capacitor App plugin not available');
+						}
+					} else {
+						log('Not running on native platform - using visibility API only');
+					}
+				}, 2000);
 			}
 
-			// Re-registration function
+			// Re-registration function with debouncing
 			function reRegister() {
-				if (isRegistered) {
-					log('Already registered, skipping re-registration');
+				log('=== RE-REGISTER FUNCTION CALLED ===');
+				log('App brought to foreground - WebSocket was likely killed, forcing re-registration...');
+				
+				// Clear any existing timeout
+				if (reRegisterTimeout) {
+					clearTimeout(reRegisterTimeout);
+					log('Cleared previous re-registration timeout');
+				}
+				
+				// Debounce re-registration - only execute after 500ms of no new calls
+				reRegisterTimeout = setTimeout(() => {
+					executeReRegister();
+				}, 500);
+				
+				log('Re-registration debounced - will execute in 500ms if no new calls');
+			}
+			
+			// Actual re-registration logic
+			function executeReRegister() {
+				log('=== EXECUTING RE-REGISTER ===');
+				
+				if (isRegistering) {
+					log('Registration already in progress - skipping re-registration');
 					return;
 				}
-
+				
 				const username = document.getElementById("username").value;
 				const password = document.getElementById("password").value;
+				log('Credentials check - username: ' + (username ? 'present' : 'missing') + ', password: ' + (password ? 'present' : 'missing'));
 				
 				if (username && password) {
-					log('Re-registering on foreground...');
-					register();
+					// Always re-register when coming from background because WebSocket is killed
+					log('WebSocket connection was killed in background - re-registering...');
+					
+					// Clean up any existing connection
+					if (userAgent) {
+						try {
+							userAgent.unregister();
+							log('Cleaned up old connection');
+						} catch (err) {
+							log('Error cleaning up old connection: ' + err);
+						}
+					}
+
+					// Wait a moment then register fresh
+					setTimeout(() => {
+						log('Re-registering with fresh WebSocket connection...');
+						register();
+					}, 1000);
 				} else {
 					log('No credentials available for re-registration');
 				}
+			}
+
+			// WebSocket connection monitoring
+			function setupWebSocketMonitoring() {
+				log('Setting up WebSocket connection monitoring...');
+				
+				// Monitor WebSocket connection status
+				setInterval(() => {
+					if (userAgent && isRegistered) {
+						// Check if WebSocket is still connected
+						if (userAgent.transport && userAgent.transport.ws) {
+							if (userAgent.transport.ws.readyState === WebSocket.CLOSED || 
+								userAgent.transport.ws.readyState === WebSocket.CLOSING) {
+								log('WebSocket connection lost - will re-register on next foreground');
+								// Mark as not registered so re-registration will happen
+								isRegistered = false;
+							}
+						}
+					}
+				}, 5000); // Check every 5 seconds
 			}
 
 			// Bluetooth audio management
@@ -2368,7 +2459,27 @@
 				await Storage.loadConfig();
 
 				// Setup app state listeners for re-registration
+				log('=== CALLING setupAppStateListeners ===');
+				console.log('=== JAVASCRIPT IS RUNNING ===');
 				setupAppStateListeners();
+				log('=== setupAppStateListeners COMPLETED ===');
+				
+				// Setup WebSocket connection monitoring
+				setupWebSocketMonitoring();
+				
+				// Debug: Log what's available
+				log('Window.Capacitor available: ' + (window.Capacitor ? 'Yes' : 'No'));
+				if (window.Capacitor) {
+					log('Capacitor.isNativePlatform: ' + window.Capacitor.isNativePlatform());
+					log('Capacitor.Plugins available: ' + (window.Capacitor.Plugins ? 'Yes' : 'No'));
+					if (window.Capacitor.Plugins) {
+						log('Capacitor.Plugins.App available: ' + (window.Capacitor.Plugins.App ? 'Yes' : 'No'));
+					}
+				}
+				
+				// Duplicate listeners removed - only using the main setup above
+				
+				// Duplicate listeners removed - only using the main setup above
 
 				// Setup Bluetooth audio
 				setupBluetoothAudio();

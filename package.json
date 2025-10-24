@@ -142,5 +142,10 @@
 	"devDependencies": {
 		"electron": "^38.2.1",
 		"electron-builder": "^26.0.12"
+	},
+	"dependencies": {
+		"@capacitor/android": "^7.4.4",
+		"@capacitor/app": "^7.1.0",
+		"@capacitor/cli": "^7.4.4"
 	}
 }
