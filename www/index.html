@@ -1159,10 +1159,12 @@
 					return;
 				}
 
+				// Atomic check and set to prevent race conditions
 				if (isRegistering) {
 					log("Registration already in progress - ignoring duplicate request");
 					return;
 				}
+				isRegistering = true; // Set lock immediately
 
 				const server = document.getElementById("sipServer").value;
 				const username = document.getElementById("username").value;
@@ -1173,15 +1175,15 @@
 
 				if (!server || !username || !password) {
 					alert("Please fill in all required fields");
+					isRegistering = false; // Reset lock on early return
 					return;
 				}
-
-				isRegistering = true;
 
 				if (!isValidUsername(username)) {
 					alert("Username must be exactly 10 numeric digits");
 					document.getElementById("usernameError").style.display =
 						"block";
+					isRegistering = false; // Reset lock on early return
 					return;
 				}
 
