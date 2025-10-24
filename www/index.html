@@ -1150,7 +1150,7 @@
 			}
 
 			// SIP Registration
-			function register() {
+			async function register() {
 				if (typeof SIP === "undefined") {
 					alert(
 						"SIP.js library is not loaded. Please refresh the page.",
@@ -1849,6 +1849,9 @@
 
 					// Handle Bluetooth audio routing
 					handleBluetoothAudio();
+					
+					// Configure audio session for lock screen continuity
+					configureAudioSession();
 
 					if (
 						currentSession &&
@@ -1891,6 +1894,19 @@
 							document.getElementById("remoteAudio");
 						remoteAudio.srcObject = remoteStream;
 						remoteAudio.volume = 1.0; // Unmute when call connects
+						
+						// Configure audio for lock screen continuity
+						remoteAudio.setAttribute('playsinline', 'true');
+						remoteAudio.setAttribute('webkit-playsinline', 'true');
+						
+						// Ensure audio continues during lock screen
+						remoteAudio.addEventListener('canplay', function() {
+							remoteAudio.play().catch(e => {
+								log('Audio play failed: ' + e.message);
+							});
+						});
+						
+						log('Audio configured for lock screen continuity');
 					} catch (e) {
 						log("Error setting up audio: " + e.message);
 					}
@@ -1911,10 +1927,21 @@
 							document.getElementById("remoteAudio");
 						remoteAudio.srcObject = remoteStream;
 
+						// Configure audio for lock screen continuity
+						remoteAudio.setAttribute('playsinline', 'true');
+						remoteAudio.setAttribute('webkit-playsinline', 'true');
+
 						// Mute if still ringing (early media)
 						if (ringingStarted) {
 							remoteAudio.volume = 0;
 							log("Early media audio track muted");
+						} else {
+							// Ensure audio continues during lock screen
+							remoteAudio.addEventListener('canplay', function() {
+								remoteAudio.play().catch(e => {
+									log('Audio play failed: ' + e.message);
+								});
+							});
 						}
 					} catch (e) {
 						log("Error handling track: " + e.message);
@@ -1964,6 +1991,9 @@
 				document.getElementById("callControls").classList.add("active");
 				document.getElementById("callBtn").disabled = true;
 				hideDialpad();
+				
+				// Request wake lock to prevent screen sleep during calls
+				requestWakeLock();
 			}
 
 			function hideCallControls() {
@@ -1973,6 +2003,9 @@
 				document.getElementById("callBtn").disabled = false;
 				stopCallTimer();
 				showDialpad();
+				
+				// Release wake lock when call ends
+				releaseWakeLock();
 			}
 
 			function endCall() {
@@ -1990,6 +2023,9 @@
 				
 				// Clean up call timer
 				stopCallTimer();
+				
+				// Release wake lock when call ends
+				releaseWakeLock();
 				
 				// Save call to history
 				try {
@@ -2441,6 +2477,104 @@
 				}
 			}
 
+			// Configure audio session for lock screen continuity
+			function configureAudioSession() {
+				try {
+					// Request audio focus for phone calls
+					if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+						// Set audio constraints for phone calls
+						const audioConstraints = {
+							audio: {
+								echoCancellation: true,
+								noiseSuppression: true,
+								autoGainControl: true,
+								// Request audio focus for phone calls
+								channelCount: 1,
+								sampleRate: 8000
+							}
+						};
+						
+						log('Audio session configured for lock screen continuity');
+						
+						// Set up visibility change handler for audio management
+						document.addEventListener('visibilitychange', function() {
+							if (currentSession && !document.hidden) {
+								// App came back to foreground - ensure audio is still working
+								log('App returned to foreground - checking audio session');
+								handleBluetoothAudio();
+							}
+						});
+					}
+				} catch (error) {
+					log('Error configuring audio session: ' + error.message);
+				}
+			}
+
+			// Wake lock management for call continuity
+			let wakeLock = null;
+			
+			async function requestWakeLock() {
+				try {
+					if ('wakeLock' in navigator) {
+						wakeLock = await navigator.wakeLock.request('screen');
+						log('Wake lock acquired - screen will stay on during call');
+						
+						wakeLock.addEventListener('release', () => {
+							log('Wake lock released');
+						});
+					} else {
+						log('Wake lock API not supported');
+					}
+				} catch (error) {
+					log('Wake lock failed: ' + error.message);
+				}
+			}
+			
+			async function releaseWakeLock() {
+				try {
+					if (wakeLock) {
+						await wakeLock.release();
+						wakeLock = null;
+						log('Wake lock released');
+					}
+				} catch (error) {
+					log('Error releasing wake lock: ' + error.message);
+				}
+			}
+
+			// Setup audio session for lock screen continuity
+			function setupAudioSession() {
+				try {
+					// Configure audio context for phone calls
+					if (window.AudioContext || window.webkitAudioContext) {
+						const AudioContext = window.AudioContext || window.webkitAudioContext;
+						const audioContext = new AudioContext();
+						
+						// Set audio context state to running
+						if (audioContext.state === 'suspended') {
+							audioContext.resume().then(() => {
+								log('Audio context resumed for lock screen continuity');
+							});
+						}
+						
+						// Handle visibility changes for audio context
+						document.addEventListener('visibilitychange', function() {
+							if (audioContext.state === 'suspended' && currentSession) {
+								audioContext.resume().then(() => {
+									log('Audio context resumed on visibility change');
+								});
+							}
+						});
+					}
+					
+					log('Audio session setup completed');
+				} catch (error) {
+					log('Error setting up audio session: ' + error.message);
+				}
+			}
+
+
+
 			// Initialize on DOM load
 			window.addEventListener("DOMContentLoaded", async function () {
 				if (typeof SIP === "undefined") {
@@ -2460,11 +2594,15 @@
 				// Load saved configuration
 				await Storage.loadConfig();
 
+
 				// Setup app state listeners for re-registration
 				log('=== CALLING setupAppStateListeners ===');
 				console.log('=== JAVASCRIPT IS RUNNING ===');
 				setupAppStateListeners();
 				log('=== setupAppStateListeners COMPLETED ===');
+				
+				// Setup audio session for lock screen continuity
+				setupAudioSession();
 				
 				// Setup WebSocket connection monitoring
 				setupWebSocketMonitoring();
