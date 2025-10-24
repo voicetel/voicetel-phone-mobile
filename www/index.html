@@ -137,6 +137,34 @@
 				border-radius: 12px;
 			}
 
+			#contactsSection .log {
+				padding: 20px;
+				max-height: 300px;
+				border-radius: 12px;
+				overflow-y: auto;
+			}
+
+			.contact-item {
+				padding: 16px 20px;
+				border-bottom: 1px solid #f0f0f0;
+				cursor: pointer;
+				transition: all 0.2s ease;
+				background: white;
+			}
+
+			.contact-item:hover {
+				background-color: #f8f9fa;
+				transform: translateX(2px);
+			}
+
+			.contact-item:last-child {
+				border-bottom: none;
+			}
+
+			.contact-item:active {
+				background-color: #e9ecef;
+			}
+
 			#historySection .log-entry {
 				display: flex;
 				justify-content: space-between;
@@ -428,6 +456,13 @@
 						title="Phone"
 					>
 						📞
+					</button>
+					<button
+						class="header-toggle"
+						onclick="showContacts()"
+						title="Contacts"
+					>
+						👥
 					</button>
 					<button
 						class="header-toggle"
@@ -726,10 +761,9 @@
 					</div>
 
 					<div id="callControls" class="call-controls">
-						<div class="call-info">
-							<div id="callStatus">Call in progress</div>
-							<div id="callDuration">00:00</div>
-						</div>
+					<div class="call-info">
+						<div id="callStatus">Call in progress</div>
+					</div>
 						<div id="ringingIndicator">🔔 Ringing...</div>
 						<div
 							class="button-group"
@@ -824,6 +858,39 @@
 					</details>
 				</div>
 
+				<div class="section log-section" id="contactsSection">
+					<h2>Contacts</h2>
+					<div class="contacts-search" style="margin-bottom: 15px;">
+						<input 
+							type="text" 
+							id="contactSearch" 
+							placeholder="🔍 Search contacts..." 
+							class="input-field"
+							style="width: 100%; padding: 12px 16px; border: 2px solid #e1e5e9; border-radius: 25px; font-size: 14px; background: #f8f9fa; transition: all 0.3s ease; outline: none;"
+							onfocus="this.style.borderColor='#007bff'; this.style.backgroundColor='white'; this.style.boxShadow='0 0 0 3px rgba(0,123,255,0.1)';"
+							onblur="this.style.borderColor='#e1e5e9'; this.style.backgroundColor='#f8f9fa'; this.style.boxShadow='none';"
+						/>
+					</div>
+					<div id="contactsList" class="log">
+						<div class="contact-item" style="text-align: center; padding: 20px; color: #666;">
+							<button class="btn-primary" onclick="loadContacts()">
+								📱 Load Contacts
+							</button>
+							<p style="margin-top: 10px; font-size: 14px;">
+								Tap to load your device contacts
+							</p>
+						</div>
+					</div>
+					<div class="contacts-actions" style="display: flex; gap: 10px; margin-top: 12px">
+						<button class="btn-secondary" onclick="loadContacts()">
+							🔄 Refresh
+						</button>
+						<button class="btn-secondary" onclick="clearContacts()">
+							🗑️ Clear
+						</button>
+					</div>
+				</div>
+
 				<div class="section log-section" id="historySection">
 					<h2>Call History</h2>
 					<div id="callHistory" class="log"></div>
@@ -852,6 +919,10 @@
 
 		<script src="https://cdn.jsdelivr.net/npm/sip.js@0.15.11/dist/sip.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+		<script>
+			// Contacts plugin will be available via Capacitor at runtime
+			// We'll access it through window.Capacitor.Plugins.Contacts
+		</script>
 		<script>
 			// Capacitor will be available at runtime
 			// We'll check for it in the app state listeners
@@ -1008,8 +1079,6 @@
 			let isMuted = false;
 			let isRegistering = false; // Lock to prevent multiple registrations
 			let reRegisterTimeout = null; // Debounce re-registration
-			let callTimer = null;
-			let callStartTime = null;
 			let ringingAudio = null;
 			
 			// Bluetooth audio management
@@ -1023,6 +1092,7 @@
 			// Call tracking for history
 			let __callDirection = null;
 			let __answeredIncoming = false;
+			let __originalCallNumber = null; // Store original number for call history
 			let __incomingRaw = null;
 			let __incomingDisplay = null;
 
@@ -1429,6 +1499,7 @@
 
 					currentSession = userAgent.invite(uri, options);
 					__callDirection = "outgoing";
+					__originalCallNumber = number; // Store original number for call history
 
 					let sessionRingingStarted = false;
 
@@ -1878,7 +1949,6 @@
 						"Type or press dialpad for DTMF";
 					document.getElementById("callNumber").focus();
 
-					startCallTimer();
 
 					try {
 						const pc =
@@ -2001,7 +2071,6 @@
 					.getElementById("callControls")
 					.classList.remove("active");
 				document.getElementById("callBtn").disabled = false;
-				stopCallTimer();
 				showDialpad();
 				
 				// Release wake lock when call ends
@@ -2021,8 +2090,6 @@
 					ringingAudio = null;
 				}
 				
-				// Clean up call timer
-				stopCallTimer();
 				
 				// Release wake lock when call ends
 				releaseWakeLock();
@@ -2030,19 +2097,11 @@
 				// Save call to history
 				try {
 					if (__callDirection === "outgoing") {
-						const num =
-							document.getElementById("callNumber").value ||
-							(currentSession &&
-								currentSession.request &&
-								currentSession.request.to &&
-								currentSession.request.to.uri &&
-								currentSession.request.to.uri.user) ||
-							"Unknown";
+						const num = __originalCallNumber || "Unknown";
 						Storage.addCallToHistory(
 							"outgoing",
 							num,
-							document.getElementById("callDuration")
-								.textContent || "00:00",
+							"Connected",
 						);
 					} else if (__callDirection === "incoming") {
 						const num =
@@ -2052,8 +2111,7 @@
 						Storage.addCallToHistory(
 							"incoming",
 							num,
-							document.getElementById("callDuration")
-								.textContent || "00:00",
+							"Connected",
 						);
 					}
 				} catch (e) {
@@ -2082,31 +2140,6 @@
 				handleBluetoothDisconnect();
 			}
 
-			function startCallTimer() {
-				callStartTime = Date.now();
-				callTimer = setInterval(updateCallDuration, 1000);
-			}
-
-			function stopCallTimer() {
-				if (callTimer) {
-					clearInterval(callTimer);
-					callTimer = null;
-				}
-				document.getElementById("callDuration").textContent = "00:00";
-			}
-
-			function updateCallDuration() {
-				if (!callStartTime) return;
-
-				const duration = Math.floor(
-					(Date.now() - callStartTime) / 1000,
-				);
-				const minutes = Math.floor(duration / 60);
-				const seconds = duration % 60;
-
-				document.getElementById("callDuration").textContent =
-					`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-			}
 
 			function appendNumber(num) {
 				const input = document.getElementById("callNumber");
@@ -2197,6 +2230,7 @@
 					call: document.getElementById("callSection"),
 					config: document.getElementById("configSection"),
 					log: document.getElementById("logSection"),
+					contacts: document.getElementById("contactsSection"),
 					history: document.getElementById("historySection"),
 				};
 
@@ -2218,6 +2252,9 @@
 				} else if (view === "log") {
 					sections.log.classList.add("visible");
 					sections.log.classList.remove("hidden");
+				} else if (view === "contacts") {
+					sections.contacts.classList.add("visible");
+					sections.contacts.classList.remove("hidden");
 				} else if (view === "history") {
 					sections.history.classList.add("visible");
 					sections.history.classList.remove("hidden");
@@ -2229,12 +2266,13 @@
 					.querySelectorAll(".header-toggle")
 					.forEach((btn) => btn.classList.remove("active"));
 				const activeBtn = document.querySelector(
-					`.header-toggle[title="${view === "phone" ? "Phone" : view === "settings" ? "Settings" : view === "log" ? "Event Log" : "Call History"}"]`,
+					`.header-toggle[title="${view === "phone" ? "Phone" : view === "contacts" ? "Contacts" : view === "settings" ? "Settings" : view === "log" ? "Event Log" : "Call History"}"]`,
 				);
 				if (activeBtn) activeBtn.classList.add("active");
 			}
 
 			window.showPhone = () => setView("phone");
+			window.showContacts = () => setView("contacts");
 			window.showSettings = () => setView("settings");
 			window.showLog = () => setView("log");
 			window.showHistory = () => setView("history");
@@ -2247,36 +2285,414 @@
 				const history = await Storage.getHistory();
 
 				if (history.length === 0) {
-					el.innerHTML =
-						'<div style="text-align:center;color:#999">No call history yet</div>';
+					el.innerHTML = `
+						<div class="contact-item" style="text-align: center; padding: 20px; color: #666;">
+							<p style="font-size: 14px;">No call history yet</p>
+						</div>
+					`;
 					return;
 				}
 
-				el.innerHTML = "";
-				history.forEach((item) => {
+				el.innerHTML = '';
+				history.forEach((item, index) => {
 					let icon = "❓"; // Default for unknown
+					let callType = "Unknown";
 
 					if (item.type === "incoming") {
 						icon = "⬇️"; // Incoming answered call
+						callType = "Incoming";
 					} else if (item.type === "outgoing") {
 						icon = "⬆️"; // Outgoing call
+						callType = "Outgoing";
 					} else if (item.type === "missed") {
 						icon = "🔴"; // Missed call (rang but not answered)
+						callType = "Missed";
 					} else if (item.type === "declined") {
 						icon = "⛔"; // Declined call (explicitly rejected)
+						callType = "Declined";
 					}
 
-					const row = document.createElement("div");
-					row.className = "log-entry";
+					// Format phone number consistently
+					let displayNumber = item.number;
+					const cleanNumber = item.number.replace(/\D/g, '');
+					
+					if (cleanNumber.length === 10) {
+						// US format: (555) 123-4567
+						displayNumber = `(${cleanNumber.slice(0,3)}) ${cleanNumber.slice(3,6)}-${cleanNumber.slice(6)}`;
+					} else if (cleanNumber.length === 11 && cleanNumber.startsWith('1')) {
+						// 11 digits starting with 1: show as 10-digit format (555) 123-4567
+						displayNumber = `(${cleanNumber.slice(1,4)}) ${cleanNumber.slice(4,7)}-${cleanNumber.slice(7)}`;
+					} else if (cleanNumber.length === 7) {
+						// Local format: 123-4567
+						displayNumber = `${cleanNumber.slice(0,3)}-${cleanNumber.slice(3)}`;
+					} else if (cleanNumber.length > 11) {
+						// International format: +XX XXX XXX XXXX
+						const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
+						const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
+						const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
+						const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+						displayNumber = `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
+					}
+
 					const timestamp = new Date(item.timestamp).toLocaleString();
-					row.innerHTML = `${icon} <a href="#" class="history-call" onclick="return redial('${item.number}')"><strong>${item.number}</strong></a> - ${item.duration}<br><small>${timestamp}</small>`;
-					el.appendChild(row);
+					const safeNumber = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
+					
+					const historyDiv = document.createElement('div');
+					historyDiv.className = 'contact-item';
+					historyDiv.style.cssText = `
+						padding: 16px 20px;
+						border-bottom: 1px solid #f0f0f0;
+						cursor: pointer;
+						transition: all 0.2s ease;
+						background: white;
+					`;
+					
+					// Create the history display HTML
+					const historyHTML = `
+						<div style="padding: 6px 0;">
+							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+								<span style="font-size: 18px;">${icon}</span>
+								<div style="flex: 1;">
+									<button onclick="redial('${safeNumber}')" 
+										style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left; font-weight: 600;">
+										${displayNumber}
+									</button>
+									<div style="font-size: 10px; color: #888; text-transform: capitalize; margin-top: 2px;">
+										${callType.toLowerCase()}
+									</div>
+								</div>
+							</div>
+							<div style="font-size: 10px; color: #666; margin-left: 30px;">
+								${timestamp}
+							</div>
+						</div>
+					`;
+					
+					historyDiv.innerHTML = historyHTML;
+					
+					historyDiv.addEventListener('mouseenter', () => {
+						historyDiv.style.backgroundColor = '#f5f5f5';
+					});
+					historyDiv.addEventListener('mouseleave', () => {
+						historyDiv.style.backgroundColor = 'transparent';
+					});
+					
+					el.appendChild(historyDiv);
 				});
 			}
 
 			async function clearHistory() {
 				await Storage.clearHistory();
 				renderCallHistory();
+			}
+
+			// Contact management functions
+			let contactsList = [];
+
+			async function loadContacts() {
+				try {
+					// Check if Capacitor and Contacts plugin are available
+					if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.Contacts) {
+						log("Contacts plugin not available - make sure you're running on a device");
+						alert("Contacts plugin is not available. Please make sure you're running the app on a mobile device.");
+						return;
+					}
+
+					const Contacts = window.Capacitor.Plugins.Contacts;
+					log("Requesting contacts permission...");
+					const permission = await Contacts.requestPermissions();
+					
+					if (permission.contacts === 'granted') {
+						log("Loading contacts...");
+						const result = await Contacts.getContacts({
+							projection: {
+								name: true,
+								phones: true,
+								emails: true,
+								image: true
+							}
+						});
+						
+						contactsList = result.contacts || [];
+						log(`Loaded ${contactsList.length} contacts`);
+						
+						// Debug: Log the first contact to see the structure
+						if (contactsList.length > 0) {
+							console.log('First contact structure:', contactsList[0]);
+							log('First contact: ' + JSON.stringify(contactsList[0]));
+						}
+						
+						renderContacts();
+					} else {
+						log("Contacts permission denied");
+						alert("Contacts permission is required to load your contacts.");
+					}
+				} catch (error) {
+					log(`Error loading contacts: ${error.message}`);
+					console.error("Contacts error:", error);
+				}
+			}
+
+			function renderContacts() {
+				const el = document.getElementById("contactsList");
+				if (!el) return;
+
+				if (contactsList.length === 0) {
+					el.innerHTML = `
+						<div class="contact-item" style="text-align: center; padding: 20px; color: #666;">
+							<button class="btn-primary" onclick="loadContacts()">
+								📱 Load Contacts
+							</button>
+							<p style="margin-top: 10px; font-size: 14px;">
+								Tap to load your device contacts
+							</p>
+						</div>
+					`;
+					return;
+				}
+
+				// Filter contacts that have phone numbers and clean/unique them
+				const contactsWithPhones = contactsList.filter(contact => {
+					const phones = contact.phones || [];
+					return phones.length > 0 && phones.some(phone => {
+						const phoneNumber = typeof phone === 'string' ? phone : phone.number;
+						return phoneNumber && phoneNumber.trim().length > 0;
+					});
+				});
+
+				// Sort contacts alphabetically by name
+				contactsWithPhones.sort((a, b) => {
+					// Extract names for comparison
+					let nameA = 'Unknown';
+					let nameB = 'Unknown';
+					
+					if (a.name) {
+						if (typeof a.name === 'string') {
+							nameA = a.name;
+						} else if (a.name.display) {
+							nameA = a.name.display;
+						} else if (a.name.given || a.name.family) {
+							nameA = `${a.name.given || ''} ${a.name.family || ''}`.trim();
+						} else if (a.name.givenName || a.name.familyName) {
+							nameA = `${a.name.givenName || ''} ${a.name.familyName || ''}`.trim();
+						} else if (a.name.displayName) {
+							nameA = a.name.displayName;
+						}
+					} else if (a.displayName) {
+						nameA = a.displayName;
+					}
+					
+					if (b.name) {
+						if (typeof b.name === 'string') {
+							nameB = b.name;
+						} else if (b.name.display) {
+							nameB = b.name.display;
+						} else if (b.name.given || b.name.family) {
+							nameB = `${b.name.given || ''} ${b.name.family || ''}`.trim();
+						} else if (b.name.givenName || b.name.familyName) {
+							nameB = `${b.name.givenName || ''} ${b.name.familyName || ''}`.trim();
+						} else if (b.name.displayName) {
+							nameB = b.name.displayName;
+						}
+					} else if (b.displayName) {
+						nameB = b.displayName;
+					}
+					
+					// Compare names alphabetically (case-insensitive)
+					return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
+				});
+
+				if (contactsWithPhones.length === 0) {
+					el.innerHTML = `
+						<div class="contact-item" style="text-align: center; padding: 20px; color: #666;">
+							<p>No contacts with phone numbers found</p>
+						</div>
+					`;
+					return;
+				}
+
+				el.innerHTML = '';
+				contactsWithPhones.forEach((contact, index) => {
+					// Extract contact information properly - handle different data structures
+					let name = 'Unknown';
+					if (contact.name) {
+						if (typeof contact.name === 'string') {
+							name = contact.name;
+						} else if (contact.name.display) {
+							name = contact.name.display;
+						} else if (contact.name.given || contact.name.family) {
+							name = `${contact.name.given || ''} ${contact.name.family || ''}`.trim();
+						} else if (contact.name.givenName || contact.name.familyName) {
+							name = `${contact.name.givenName || ''} ${contact.name.familyName || ''}`.trim();
+						} else if (contact.name.displayName) {
+							name = contact.name.displayName;
+						}
+					} else if (contact.displayName) {
+						name = contact.displayName;
+					}
+					
+					// Create a safe display name (escape quotes) - only if name is a string
+					const safeName = typeof name === 'string' ? name.replace(/'/g, "\\'").replace(/"/g, '\\"') : 'Unknown';
+					
+					const phones = contact.phones || [];
+					let phoneLines = '';
+					const uniquePhones = new Set(); // Track unique phone numbers
+					
+					phones.forEach((phone, index) => {
+						let phoneNumber = '';
+						let phoneType = 'Phone';
+						
+						if (typeof phone === 'string') {
+							phoneNumber = phone;
+							phoneType = 'Phone';
+						} else if (phone.number) {
+							phoneNumber = phone.number;
+							phoneType = phone.type || 'Phone';
+						}
+						
+						if (phoneNumber) {
+							// Clean the phone number (remove all non-digits)
+							const cleanNumber = phoneNumber.replace(/\D/g, '');
+							
+							// Only add if we haven't seen this number before and it's not empty
+							if (cleanNumber.length > 0 && !uniquePhones.has(cleanNumber)) {
+								uniquePhones.add(cleanNumber);
+								
+								// Format the display number based on length
+								let displayNumber = cleanNumber;
+								if (cleanNumber.length === 10) {
+									// US format: (555) 123-4567
+									displayNumber = `(${cleanNumber.slice(0,3)}) ${cleanNumber.slice(3,6)}-${cleanNumber.slice(6)}`;
+								} else if (cleanNumber.length === 11 && cleanNumber.startsWith('1')) {
+									// 11 digits starting with 1: show as 10-digit format (555) 123-4567
+									displayNumber = `(${cleanNumber.slice(1,4)}) ${cleanNumber.slice(4,7)}-${cleanNumber.slice(7)}`;
+								} else if (cleanNumber.length === 7) {
+									// Local format: 123-4567
+									displayNumber = `${cleanNumber.slice(0,3)}-${cleanNumber.slice(3)}`;
+								} else if (cleanNumber.length > 11) {
+									// International format: +XX XXX XXX XXXX
+									const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
+									const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
+									const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
+									const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+									displayNumber = `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
+								}
+								
+								const safePhone = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
+								phoneLines += `
+									<div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 2px 0; padding: 3px 0;">
+										<button onclick="callContact('${safePhone}', '${safeName}')" 
+											style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left;">
+											${displayNumber}
+										</button>
+										<span style="font-size: 10px; color: #888; text-transform: capitalize; min-width: 50px; text-align: left;">
+											${phoneType.toLowerCase()}
+										</span>
+									</div>
+								`;
+							}
+						}
+					});
+					
+					const contactDiv = document.createElement('div');
+					contactDiv.className = 'contact-item';
+					contactDiv.style.cssText = `
+						padding: 16px 20px;
+						border-bottom: 1px solid #f0f0f0;
+						cursor: pointer;
+						transition: all 0.2s ease;
+						background: white;
+					`;
+					
+					// Create the contact display HTML with multiple phone numbers
+					const contactHTML = `
+						<div style="padding: 6px 0;">
+							<div style="font-weight: 600; font-size: 14px; color: #333; margin-bottom: 6px;">
+								${safeName}
+							</div>
+							${phoneLines}
+						</div>
+					`;
+					
+					contactDiv.innerHTML = contactHTML;
+					
+					contactDiv.addEventListener('mouseenter', () => {
+						contactDiv.style.backgroundColor = '#f5f5f5';
+					});
+					contactDiv.addEventListener('mouseleave', () => {
+						contactDiv.style.backgroundColor = 'transparent';
+					});
+					
+					el.appendChild(contactDiv);
+				});
+			}
+
+			function callContact(phoneNumber, contactName) {
+				// Clean the phone number
+				const cleanNumber = phoneNumber.replace(/\D/g, '');
+				document.getElementById("callNumber").value = cleanNumber;
+				__originalCallNumber = cleanNumber; // Store original number for call history
+				setView("phone");
+				
+				if (isRegistered) {
+					makeCall();
+				} else {
+					log("Please register first before making calls");
+				}
+			}
+
+			function clearContacts() {
+				contactsList = [];
+				renderContacts();
+				log("Contacts cleared");
+			}
+
+			// Contact search functionality
+			function setupContactSearch() {
+				const searchInput = document.getElementById("contactSearch");
+				if (searchInput) {
+					searchInput.addEventListener('input', (e) => {
+						const query = e.target.value.toLowerCase();
+						if (query === '') {
+							renderContacts();
+							return;
+						}
+						
+						const filteredContacts = contactsList.filter(contact => {
+							// Extract contact name properly - same logic as renderContacts
+							let name = 'Unknown';
+							if (contact.name) {
+								if (typeof contact.name === 'string') {
+									name = contact.name;
+								} else if (contact.name.display) {
+									name = contact.name.display;
+								} else if (contact.name.given || contact.name.family) {
+									name = `${contact.name.given || ''} ${contact.name.family || ''}`.trim();
+								} else if (contact.name.givenName || contact.name.familyName) {
+									name = `${contact.name.givenName || ''} ${contact.name.familyName || ''}`.trim();
+								} else if (contact.name.displayName) {
+									name = contact.name.displayName;
+								}
+							} else if (contact.displayName) {
+								name = contact.displayName;
+							}
+							
+							const nameMatch = name.toLowerCase().includes(query);
+							const phones = contact.phones || [];
+							const phoneMatch = phones.some(phone => {
+								const phoneNumber = typeof phone === 'string' ? phone : phone.number;
+								return phoneNumber && phoneNumber.toLowerCase().includes(query);
+							});
+							return nameMatch || phoneMatch;
+						});
+						
+						// Temporarily replace contactsList for rendering
+						const originalContacts = contactsList;
+						contactsList = filteredContacts;
+						renderContacts();
+						contactsList = originalContacts;
+					});
+				}
 			}
 
 			function redial(num) {
@@ -2607,6 +3023,13 @@
 				// Setup WebSocket connection monitoring
 				setupWebSocketMonitoring();
 				
+				// Setup contact search functionality
+				setupContactSearch();
+				
+				// Auto-load contacts on startup
+				log("Auto-loading contacts on startup...");
+				loadContacts();
+				
 				// Debug: Log what's available
 				log('Window.Capacitor available: ' + (window.Capacitor ? 'Yes' : 'No'));
 				if (window.Capacitor) {
@@ -2700,10 +3123,6 @@
 				if (incomingCallTimeout) {
 					clearTimeout(incomingCallTimeout);
 					incomingCallTimeout = null;
-				}
-				if (callTimer) {
-					clearInterval(callTimer);
-					callTimer = null;
 				}
 				
 				// Clean up WebSocket event listeners
