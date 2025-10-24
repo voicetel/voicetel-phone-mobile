@@ -492,7 +492,7 @@
 
 			<div class="content">
 				<div class="section config-section" id="configSection">
-					<h2>SIP Configuration</h2>
+					<h2>Settings</h2>
 					
 					<div class="button-group" style="margin-bottom: 20px;">
 						<button
@@ -641,6 +641,25 @@
 							style="color: #999; display: block; margin-top: 8px"
 						>
 							🤖 Register automatically on startup
+						</small>
+
+						<label
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+								color: #667eea;
+								font-weight: 600;
+								margin-top: 20px;
+							"
+						>
+							<input type="checkbox" id="hideEventLog" />
+							<span>Hide Event Log</span>
+						</label>
+						<small
+							style="color: #999; display: block; margin-top: 8px"
+						>
+							👁️ Hide the event log from the main interface
 						</small>
 
 						<div
@@ -965,6 +984,8 @@
 							registerOnStartup:
 								document.getElementById("registerOnStartup")
 									.checked,
+							hideEventLog:
+								document.getElementById("hideEventLog").checked,
 							saveCredentials: true,
 						};
 
@@ -1011,10 +1032,17 @@
 							config.hideCallerID || false;
 						document.getElementById("registerOnStartup").checked =
 							config.registerOnStartup || false;
+						document.getElementById("hideEventLog").checked =
+							config.hideEventLog || false;
 						document.getElementById("saveCredentials").checked =
 							config.saveCredentials || false;
 
 						log("Configuration loaded from local storage");
+						console.log("hideEventLog setting loaded:", config.hideEventLog);
+						console.log("hideEventLog checkbox checked:", document.getElementById("hideEventLog").checked);
+
+						// Update event log visibility based on setting
+						updateEventLogVisibility();
 
 						// Auto-register if enabled
 						if (
@@ -2224,6 +2252,45 @@
 				}
 			}
 
+			// Function to update event log visibility based on setting
+			function updateEventLogVisibility() {
+				const hideEventLogElement = document.getElementById("hideEventLog");
+				if (!hideEventLogElement) {
+					console.log("hideEventLog element not found, skipping visibility update");
+					return;
+				}
+				
+				const hideEventLog = hideEventLogElement.checked;
+				const logButton = document.querySelector('.header-toggle[title="Event Log"]');
+				const logSection = document.getElementById("logSection");
+				
+				console.log("updateEventLogVisibility called, hideEventLog:", hideEventLog);
+				console.log("logButton found:", !!logButton);
+				console.log("logSection found:", !!logSection);
+				
+				if (hideEventLog) {
+					// Hide the event log button and section
+					if (logButton) {
+						logButton.style.display = 'none';
+						console.log("Event log button hidden");
+					}
+					if (logSection) {
+						logSection.style.display = 'none';
+						console.log("Event log section hidden");
+					}
+				} else {
+					// Show the event log button and section by removing the style (restores original CSS)
+					if (logButton) {
+						logButton.style.display = '';
+						console.log("Event log button shown (restored original styling)");
+					}
+					if (logSection) {
+						logSection.style.display = '';
+						console.log("Event log section shown (restored original styling)");
+					}
+				}
+			}
+
 			// View management
 			function setView(view) {
 				const sections = {
@@ -2729,6 +2796,7 @@
 					"saveCredentials",
 					"hideCallerID",
 					"registerOnStartup",
+					"hideEventLog",
 				].forEach((id) => {
 					const el = document.getElementById(id);
 					if (el) el.checked = false;
@@ -3030,6 +3098,12 @@
 				log("Auto-loading contacts on startup...");
 				loadContacts();
 				
+				// Ensure event log visibility is set correctly after everything is loaded
+				setTimeout(() => {
+					console.log("Final updateEventLogVisibility call after initialization");
+					updateEventLogVisibility();
+				}, 100);
+				
 				// Debug: Log what's available
 				log('Window.Capacitor available: ' + (window.Capacitor ? 'Yes' : 'No'));
 				if (window.Capacitor) {
@@ -3087,12 +3161,17 @@
 					"hideCallerID",
 					"saveCredentials",
 					"registerOnStartup",
+					"hideEventLog",
 				].forEach((id) => {
 					const el = document.getElementById(id);
 					if (el) {
-						el.addEventListener("change", () =>
-							Storage.saveConfig(),
-						);
+						el.addEventListener("change", () => {
+							Storage.saveConfig();
+							// Update event log visibility when hideEventLog changes
+							if (id === "hideEventLog") {
+								updateEventLogVisibility();
+							}
+						});
 					}
 				});
 
