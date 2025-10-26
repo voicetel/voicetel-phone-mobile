@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>VoiceTel Phone v3.5.4</title>
+		<title>VoiceTel Phone v3.5.5</title>
 		<link rel="icon" type="image/png" href="favicon.png" />
 		<style>
 			* {
@@ -1108,6 +1108,7 @@
 			let isRegistering = false; // Lock to prevent multiple registrations
 			let reRegisterTimeout = null; // Debounce re-registration
 			let ringingAudio = null;
+			let isRinging = false; // Global ringing state to prevent double ringing
 			
 			// Bluetooth audio management
 			let bluetoothAudioContext = null;
@@ -1196,6 +1197,12 @@
 			}
 
 			function startRinging() {
+				if (isRinging || ringingAudio) {
+					log("Ringing already active, ignoring duplicate start request");
+					return;
+				}
+				
+				isRinging = true;
 				document.getElementById("ringingIndicator").style.display =
 					"block";
 				document.getElementById("callStatus").textContent =
@@ -1205,10 +1212,16 @@
 					ringingAudio = createRingingTone();
 				} catch (e) {
 					log("Could not generate ringing tone: " + e.message);
+					isRinging = false; // Reset on error
 				}
 			}
 
 			function stopRinging() {
+				if (!isRinging && !ringingAudio) {
+					return; // Not ringing, nothing to stop
+				}
+				
+				isRinging = false;
 				document.getElementById("ringingIndicator").style.display =
 					"none";
 				document.getElementById("callStatus").textContent =
@@ -1306,6 +1319,7 @@
 						authorizationUser: username,
 						password: password,
 						displayName: displayName,
+						userAgentString: "VoiceTel/3.5.5",
 						register: true, // Keep automatic registration
 						registerOptions: {
 							registrar: `sip:tls.voicetel.com`,
@@ -1796,10 +1810,9 @@
 			}
 
 			function setupSessionHandlers(session) {
-				let ringingStarted = false;
-
 				if (session.on) {
 					session.on("response", (response) => {
+						// Only log responses, ringing handled by progress handler
 						if (
 							response &&
 							response.status_code &&
@@ -1808,22 +1821,6 @@
 							log(
 								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
 							);
-
-							if (
-								!ringingStarted &&
-								(response.status_code === 180 ||
-									response.status_code === 183)
-							) {
-								startRinging();
-								ringingStarted = true;
-							}
-
-							if (response.status_code === 200) {
-								if (ringingStarted) {
-									stopRinging();
-									ringingStarted = false;
-								}
-							}
 						}
 					});
 				}
@@ -1838,13 +1835,9 @@
 							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
 						);
 
-						if (
-							!ringingStarted &&
-							(response.status_code === 180 ||
-								response.status_code === 183)
-						) {
+						// Handle ringing for 180/183 responses (global state prevents duplicates)
+						if (response.status_code === 180 || response.status_code === 183) {
 							startRinging();
-							ringingStarted = true;
 						}
 
 						// Mute early media if we receive 183
@@ -1860,10 +1853,7 @@
 				});
 
 				session.on("terminated", (message, cause) => {
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+					stopRinging(); // Global state management handles this
 					log("Call ended" + (cause ? ": " + cause : ""));
 					endCall();
 				});
@@ -1879,10 +1869,7 @@
 						);
 					}
 
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+					stopRinging(); // Global state management handles this
 
 					if (
 						cause &&
@@ -1911,20 +1898,14 @@
 						);
 					}
 					log("Call rejected" + (cause ? ": " + cause : ""));
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+					stopRinging(); // Global state management handles this
 					endCall();
 				});
 
 				session.on("bye", (request) => {
 					log("SIP BYE received");
 					log("Call ended by remote");
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+					stopRinging(); // Global state management handles this
 					endCall();
 				});
 
@@ -1939,10 +1920,7 @@
 						);
 					}
 
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+					stopRinging(); // Global state management handles this
 
 					log("Call connected");
 
@@ -2030,7 +2008,7 @@
 						remoteAudio.setAttribute('webkit-playsinline', 'true');
 
 						// Mute if still ringing (early media)
-						if (ringingStarted) {
+						if (isRinging) {
 							remoteAudio.volume = 0;
 							log("Early media audio track muted");
 						} else {
@@ -3070,7 +3048,7 @@
 					return;
 				}
 
-				log("VoiceTel Phone v3.5.4 ready");
+				log("VoiceTel Phone v3.5.5 ready");
 				log("Using local storage");
 				log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
 				log("Server: tls.voicetel.com (wss://443)");
