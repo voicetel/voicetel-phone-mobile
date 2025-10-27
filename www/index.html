@@ -780,9 +780,10 @@
 					</div>
 
 					<div id="callControls" class="call-controls">
-					<div class="call-info">
-						<div id="callStatus">Call in progress</div>
-					</div>
+				<div class="call-info">
+					<div id="callStatus">Call in progress</div>
+					<div id="callDuration">00:00</div>
+				</div>
 						<div id="ringingIndicator">🔔 Ringing...</div>
 						<div
 							class="button-group"
@@ -815,6 +816,7 @@
 					<h2>Event Log</h2>
 					<div id="log" class="log"></div>
 					<div
+						id="serverInfo"
 						style="
 							text-align: center;
 							margin-top: 10px;
@@ -822,8 +824,7 @@
 							font-size: 12px;
 						"
 					>
-						WebSocket: wss://tls.voicetel.com:443 | SIP Domain:
-						tls.voicetel.com
+						WebSocket: Loading... | SIP Domain: Loading...
 					</div>
 					
 					<details
@@ -951,6 +952,9 @@
 			const DTMF_INTERTONE_GAP_MS = 100;
 			const SIP_REGISTRATION_EXPIRES_SEC = 300;
 			const USERNAME_LENGTH = 10;
+			const APP_VERSION = window.VOICETEL_VERSION || "3.5.5";
+			const SIP_DOMAIN = window.VOICETEL_SIP_DOMAIN || "tls.voicetel.com";
+			const SIP_SERVER = window.VOICETEL_SIP_SERVER || "wss://tls.voicetel.com:443";
 
 			// Configure localforage
 			localforage.config({
@@ -1105,10 +1109,11 @@
 			let incomingCallTimeout = null;
 			let isRegistered = false;
 			let isMuted = false;
+			let callTimer = null;
+			let callStartTime = null;
+			let ringingAudio = null;
 			let isRegistering = false; // Lock to prevent multiple registrations
 			let reRegisterTimeout = null; // Debounce re-registration
-			let ringingAudio = null;
-			let isRinging = false; // Global ringing state to prevent double ringing
 			
 			// Bluetooth audio management
 			let bluetoothAudioContext = null;
@@ -1197,12 +1202,6 @@
 			}
 
 			function startRinging() {
-				if (isRinging || ringingAudio) {
-					log("Ringing already active, ignoring duplicate start request");
-					return;
-				}
-				
-				isRinging = true;
 				document.getElementById("ringingIndicator").style.display =
 					"block";
 				document.getElementById("callStatus").textContent =
@@ -1212,16 +1211,10 @@
 					ringingAudio = createRingingTone();
 				} catch (e) {
 					log("Could not generate ringing tone: " + e.message);
-					isRinging = false; // Reset on error
 				}
 			}
 
 			function stopRinging() {
-				if (!isRinging && !ringingAudio) {
-					return; // Not ringing, nothing to stop
-				}
-				
-				isRinging = false;
 				document.getElementById("ringingIndicator").style.display =
 					"none";
 				document.getElementById("callStatus").textContent =
@@ -1302,9 +1295,9 @@
 
 				try {
 					log("Starting registration...");
-					log("Connecting to VoiceTel server (tls.voicetel.com)...");
+					log(`Connecting to VoiceTel server (${SIP_DOMAIN})...`);
 
-					const uri = `sip:${username}@tls.voicetel.com`;
+					const uri = `sip:${username}@${SIP_DOMAIN}`;
 
 					const transportOptions = {
 						wsServers: [server],
@@ -1318,11 +1311,11 @@
 						transportOptions: transportOptions,
 						authorizationUser: username,
 						password: password,
-						displayName: displayName,
-						userAgentString: "VoiceTel/3.5.5",
+							displayName: displayName,
+							userAgentString: `VoiceTel/${APP_VERSION}`,
 						register: true, // Keep automatic registration
 						registerOptions: {
-							registrar: `sip:tls.voicetel.com`,
+								registrar: `sip:${SIP_DOMAIN}`,
 							expires: SIP_REGISTRATION_EXPIRES_SEC,
 						},
 						sessionDescriptionHandlerFactoryOptions: {
@@ -1384,9 +1377,9 @@
 							response.status_code &&
 							response.reason_phrase
 						) {
-							log(
-								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-							);
+					log(
+						`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+					);
 						}
 						log(`Registration failed: ${cause}`);
 						updateStatus("Registration Failed");
@@ -1497,8 +1490,8 @@
 					const hideCallerID =
 						document.getElementById("hideCallerID").checked;
 
-					const domain = "tls.voicetel.com";
-					const uri = `sip:${number}@${domain}`;
+				const domain = SIP_DOMAIN;
+				const uri = `sip:${number}@${domain}`;
 
 					const options = {
 						sessionDescriptionHandlerOptions: {
@@ -1514,12 +1507,12 @@
 					let pAssertedIdentity;
 					if (callerID && validateNorthAmericanNumber(callerID)) {
 						const formattedNumber = "+1" + callerID;
-						pAssertedIdentity = `"${displayName}" <sip:${formattedNumber}@tls.voicetel.com>`;
+						pAssertedIdentity = `"${displayName}" <sip:${formattedNumber}@${SIP_DOMAIN}>`;
 						log(
 							`Setting caller ID: ${displayName} ${formattedNumber}`,
 						);
 					} else {
-						pAssertedIdentity = `"${displayName}" <sip:${registeredUsername}@tls.voicetel.com>`;
+						pAssertedIdentity = `"${displayName}" <sip:${registeredUsername}@${SIP_DOMAIN}>`;
 						log(
 							`Using default caller ID: ${displayName} ${registeredUsername}`,
 						);
@@ -1539,79 +1532,51 @@
 						options.extraHeaders.push("Privacy: none");
 					}
 
-					currentSession = userAgent.invite(uri, options);
+				currentSession = userAgent.invite(uri, options);
 					__callDirection = "outgoing";
 					__originalCallNumber = number; // Store original number for call history
 
-					let sessionRingingStarted = false;
-
-					if (currentSession.request) {
-						const callId = currentSession.request.callId;
-
-						// Store the message handler for cleanup
-						webSocketMessageHandler = function (e) {
-							if (e && e.data && e.data.includes(callId)) {
-								const lines = e.data.split("\r\n");
-								for (let line of lines) {
-									if (line.startsWith("SIP/2.0")) {
-										log(line);
-										if (
-											!sessionRingingStarted &&
-											(line.includes("180 Ringing") ||
-												line.includes(
-													"183 Session Progress",
-												))
-										) {
-											startRinging();
-											sessionRingingStarted = true;
-										}
-										if (
-											sessionRingingStarted &&
-											line.includes("200 OK")
-										) {
-											stopRinging();
-											sessionRingingStarted = false;
-										}
-										break;
+				// WebSocket progress sniff for ringing parity
+				let sessionRingingStarted = false;
+				if (currentSession.request) {
+					const callId = currentSession.request.callId;
+					webSocketMessageHandler = function (e) {
+						if (e && e.data && e.data.includes(callId)) {
+							const lines = e.data.split("\r\n");
+							for (let line of lines) {
+								if (line.startsWith("SIP/2.0")) {
+									log(line);
+									if (!sessionRingingStarted && (line.includes("180 Ringing") || line.includes("183 Session Progress"))) {
+										startRinging();
+										sessionRingingStarted = true;
 									}
+									if (sessionRingingStarted && line.includes("200 OK")) {
+										stopRinging();
+										sessionRingingStarted = false;
+									}
+									break;
 								}
 							}
-						};
-
-						if (userAgent.transport && userAgent.transport.ws) {
-							userAgent.transport.ws.addEventListener(
-								"message",
-								webSocketMessageHandler,
-							);
-
-							currentSession.on("terminated", () => {
-								if (sessionRingingStarted) {
-									stopRinging();
-									sessionRingingStarted = false;
-								}
-								if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-									userAgent.transport.ws.removeEventListener(
-										"message",
-										webSocketMessageHandler,
-									);
-									webSocketMessageHandler = null;
-								}
-							});
-							currentSession.on("failed", () => {
-								if (sessionRingingStarted) {
-									stopRinging();
-									sessionRingingStarted = false;
-								}
-								if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-									userAgent.transport.ws.removeEventListener(
-										"message",
-										webSocketMessageHandler,
-									);
-									webSocketMessageHandler = null;
-								}
-							});
 						}
+					};
+					if (userAgent.transport && userAgent.transport.ws) {
+						userAgent.transport.ws.addEventListener("message", webSocketMessageHandler);
+						currentSession.on("terminated", () => {
+							if (sessionRingingStarted) { stopRinging(); sessionRingingStarted = false; }
+							if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+								userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+								webSocketMessageHandler = null;
+							}
+						});
+						currentSession.on("failed", () => {
+							if (sessionRingingStarted) { stopRinging(); sessionRingingStarted = false; }
+							if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+								userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+								webSocketMessageHandler = null;
+							}
+						});
 					}
+				}
 
 					setupSessionHandlers(currentSession);
 
@@ -1665,9 +1630,10 @@
 
 				document.getElementById("incomingCall").classList.add("active");
 				hideDialpad();
-
 				startRinging();
 				log("SIP/2.0 180 Ringing");
+
+				log("SIP INVITE received - awaiting answer");
 				log(`Incoming call from ${callerName} ${formattedNumber}`);
 				log("Press Enter to answer or Escape to decline");
 
@@ -1691,7 +1657,6 @@
 						incomingCallTimeout = null;
 					}
 					hideIncomingCallUI();
-					stopRinging();
 
 					// Only add "missed" if it was NOT answered and NOT manually declined
 					if (!wasAnswered && !session.__declinedByUser) {
@@ -1712,7 +1677,6 @@
 						incomingCallTimeout = null;
 					}
 					hideIncomingCallUI();
-					stopRinging();
 					log("Incoming call failed");
 					incomingSession = null;
 				});
@@ -1723,7 +1687,6 @@
 						incomingCallTimeout = null;
 					}
 					hideIncomingCallUI();
-					stopRinging();
 					log("Incoming call was rejected");
 					incomingSession = null;
 				});
@@ -1754,8 +1717,6 @@
 				hideIncomingCallUI();
 				setupSessionHandlers(currentSession);
 				currentSession.accept();
-
-				stopRinging();
 				showCallControls();
 				log("Call answered");
 				log("SIP/2.0 200 OK");
@@ -1792,7 +1753,6 @@
 				});
 
 				hideIncomingCallUI();
-				stopRinging();
 				log("Call declined");
 				log("SIP/2.0 486 Busy Here");
 				incomingSession = null;
@@ -1810,22 +1770,18 @@
 			}
 
 			function setupSessionHandlers(session) {
-				if (session.on) {
-					session.on("response", (response) => {
-						// Only log responses, ringing handled by progress handler
-						if (
-							response &&
-							response.status_code &&
-							response.reason_phrase
-						) {
-							log(
-								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-							);
-						}
-					});
+				if (!session || typeof session.on !== "function") {
+					log("Session does not support event listeners");
+					return;
 				}
 
-				session.on("progress", (response) => {
+				// Per-session ringing guard (desktop parity)
+				let ringingStarted = (function () {
+					const el = document.getElementById("ringingIndicator");
+					return !!(el && el.style.display === "block");
+				})();
+
+				session.on("response", (response) => {
 					if (
 						response &&
 						response.status_code &&
@@ -1834,18 +1790,33 @@
 						log(
 							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
 						);
-
-						// Handle ringing for 180/183 responses (global state prevents duplicates)
-						if (response.status_code === 180 || response.status_code === 183) {
+						// Manage ringing via response events
+						if (!ringingStarted && (response.status_code === 180 || response.status_code === 183)) {
 							startRinging();
+							ringingStarted = true;
 						}
+						if (response.status_code === 200 && ringingStarted) {
+							stopRinging();
+							ringingStarted = false;
+						}
+					}
+				});
 
-						// Mute early media if we receive 183
+				session.on("progress", (response) => {
+					if (
+						response &&
+						response.status_code &&
+						response.reason_phrase
+					) {
+						log(`SIP/2.0 ${response.status_code} ${response.reason_phrase}`);
+						if (!ringingStarted && (response.status_code === 180 || response.status_code === 183)) {
+							startRinging();
+							ringingStarted = true;
+						}
 						if (response.status_code === 183) {
-							const remoteAudio =
-								document.getElementById("remoteAudio");
+							const remoteAudio = document.getElementById("remoteAudio");
 							if (remoteAudio) {
-								remoteAudio.volume = 0; // Silence server audio during ringing
+								remoteAudio.volume = 0;
 								log("Early media muted during ringing");
 							}
 						}
@@ -1853,7 +1824,7 @@
 				});
 
 				session.on("terminated", (message, cause) => {
-					stopRinging(); // Global state management handles this
+					if (ringingStarted) { stopRinging(); ringingStarted = false; }
 					log("Call ended" + (cause ? ": " + cause : ""));
 					endCall();
 				});
@@ -1869,7 +1840,7 @@
 						);
 					}
 
-					stopRinging(); // Global state management handles this
+
 
 					if (
 						cause &&
@@ -1884,6 +1855,7 @@
 					} else {
 						log("Call failed: " + (cause || "Unknown error"));
 					}
+					if (ringingStarted) { stopRinging(); ringingStarted = false; }
 					endCall();
 				});
 
@@ -1898,14 +1870,14 @@
 						);
 					}
 					log("Call rejected" + (cause ? ": " + cause : ""));
-					stopRinging(); // Global state management handles this
+					if (ringingStarted) { stopRinging(); ringingStarted = false; }
 					endCall();
 				});
 
 				session.on("bye", (request) => {
 					log("SIP BYE received");
 					log("Call ended by remote");
-					stopRinging(); // Global state management handles this
+					if (ringingStarted) { stopRinging(); ringingStarted = false; }
 					endCall();
 				});
 
@@ -1920,8 +1892,7 @@
 						);
 					}
 
-					stopRinging(); // Global state management handles this
-
+					if (ringingStarted) { stopRinging(); ringingStarted = false; }
 					log("Call connected");
 
 					// Handle Bluetooth audio routing
@@ -1935,17 +1906,13 @@
 						currentSession.sessionDescriptionHandler &&
 						currentSession.sessionDescriptionHandler.peerConnection
 					) {
-						const pc =
-							currentSession.sessionDescriptionHandler
-								.peerConnection;
+						const pc = currentSession.sessionDescriptionHandler.peerConnection;
 						const remoteDesc = pc.remoteDescription;
 						if (remoteDesc && remoteDesc.sdp) {
 							if (remoteDesc.sdp.includes("telephone-event")) {
 								log("Remote supports RFC 2833 telephone-event");
 							} else {
-								log(
-									"⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF",
-								);
+								log("⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF");
 							}
 						}
 					}
@@ -1954,6 +1921,7 @@
 					document.getElementById("callNumber").placeholder =
 						"Type or press dialpad for DTMF";
 					document.getElementById("callNumber").focus();
+					startCallTimer();
 
 
 					try {
@@ -1966,23 +1934,10 @@
 							}
 						});
 
-						const remoteAudio =
-							document.getElementById("remoteAudio");
-						remoteAudio.srcObject = remoteStream;
-						remoteAudio.volume = 1.0; // Unmute when call connects
-						
-						// Configure audio for lock screen continuity
-						remoteAudio.setAttribute('playsinline', 'true');
-						remoteAudio.setAttribute('webkit-playsinline', 'true');
-						
-						// Ensure audio continues during lock screen
-						remoteAudio.addEventListener('canplay', function() {
-							remoteAudio.play().catch(e => {
-								log('Audio play failed: ' + e.message);
-							});
-						});
-						
-						log('Audio configured for lock screen continuity');
+					const remoteAudio =
+						document.getElementById("remoteAudio");
+					remoteAudio.srcObject = remoteStream;
+					remoteAudio.volume = 1.0;
 					} catch (e) {
 						log("Error setting up audio: " + e.message);
 					}
@@ -2002,23 +1957,11 @@
 						const remoteAudio =
 							document.getElementById("remoteAudio");
 						remoteAudio.srcObject = remoteStream;
-
-						// Configure audio for lock screen continuity
-						remoteAudio.setAttribute('playsinline', 'true');
-						remoteAudio.setAttribute('webkit-playsinline', 'true');
-
-						// Mute if still ringing (early media)
-						if (isRinging) {
-							remoteAudio.volume = 0;
-							log("Early media audio track muted");
-						} else {
-							// Ensure audio continues during lock screen
-							remoteAudio.addEventListener('canplay', function() {
-								remoteAudio.play().catch(e => {
-									log('Audio play failed: ' + e.message);
-								});
-							});
-						}
+					// Early media muting while ringing (desktop parity)
+					if (remoteAudio && ringingStarted) {
+						remoteAudio.volume = 0;
+						log("Early media audio track muted");
+					}
 					} catch (e) {
 						log("Error handling track: " + e.message);
 					}
@@ -2026,7 +1969,6 @@
 			}
 
 			function hangup() {
-				stopRinging();
 				if (currentSession) {
 					if (currentSession.hasAnswer) {
 						currentSession.bye();
@@ -2081,6 +2023,7 @@
 				
 				// Release wake lock when call ends
 				releaseWakeLock();
+				stopCallTimer();
 			}
 
 			function endCall() {
@@ -2090,15 +2033,13 @@
 					webSocketMessageHandler = null;
 				}
 				
-				// Clean up ringing audio
-				if (ringingAudio) {
-					ringingAudio.stop();
-					ringingAudio = null;
-				}
+
 				
 				
 				// Release wake lock when call ends
 				releaseWakeLock();
+				// Stop call timer
+				stopCallTimer();
 				
 				// Save call to history
 				try {
@@ -2128,7 +2069,6 @@
 				__callDirection = null;
 				__answeredIncoming = false;
 				hideCallControls();
-				stopRinging();
 				isMuted = false;
 				document.getElementById("muteBtn").textContent = "Mute";
 				document.getElementById("callStatus").textContent =
@@ -2144,6 +2084,27 @@
 
 				// Handle Bluetooth audio disconnect
 				handleBluetoothDisconnect();
+			}
+
+			function startCallTimer() {
+				callStartTime = Date.now();
+				callTimer = setInterval(updateCallDuration, 1000);
+			}
+
+			function stopCallTimer() {
+				if (callTimer) {
+					clearInterval(callTimer);
+					callTimer = null;
+				}
+				document.getElementById("callDuration").textContent = "00:00";
+			}
+
+			function updateCallDuration() {
+				if (!callStartTime) return;
+				const duration = Math.floor((Date.now() - callStartTime) / 1000);
+				const minutes = Math.floor(duration / 60);
+				const seconds = duration % 60;
+				document.getElementById("callDuration").textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 			}
 
 
@@ -3048,10 +3009,14 @@
 					return;
 				}
 
-				log("VoiceTel Phone v3.5.5 ready");
+			document.title = `VoiceTel Phone v${APP_VERSION}`;
+			log(`VoiceTel Phone v${APP_VERSION} ready`);
 				log("Using local storage");
 				log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
-				log("Server: tls.voicetel.com (wss://443)");
+			// Initialize SIP server hidden field and info display
+			const sipServerEl = document.getElementById("sipServer");
+			if (sipServerEl) sipServerEl.value = SIP_SERVER;
+			log(`Server: ${SIP_DOMAIN} (${SIP_SERVER})`);
 
 				// Load saved configuration
 				await Storage.loadConfig();
@@ -3169,13 +3134,6 @@
 
 			// Cleanup function for proper resource management
 			function cleanupAllResources() {
-				// Stop ringing audio
-				stopRinging();
-				if (ringingAudio) {
-					ringingAudio.stop();
-					ringingAudio = null;
-				}
-				
 				// Clear all timeouts
 				if (incomingCallTimeout) {
 					clearTimeout(incomingCallTimeout);
