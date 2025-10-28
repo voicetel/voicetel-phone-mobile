@@ -140,6 +140,7 @@
 	"homepage": "https://github.com/voicetel/voicetel-phone-desktop",
 	"license": "MIT",
 	"devDependencies": {
+		"@capacitor/ios": "^7.4.4",
 		"electron": "^38.2.1",
 		"electron-builder": "^26.0.12"
 	},
