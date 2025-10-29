@@ -6,6 +6,16 @@ A mobile WebRTC SIP phone built with Capacitor for VoiceTel communications (Andr
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey)
 
+## 📚 Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Screenshots](#-screenshots)
+- [Privacy](#-privacy)
+- [Contributors](#-contributors)
+- [Sponsors](#-sponsors)
+- [License](#-license)
+
 ## ✨ Features
 
 ### 📞 Core Telephony
@@ -91,6 +101,14 @@ open ios/App/App.xcworkspace
 # Build/run from Xcode
 ```
 
+## 📱 Screenshots
+
+Coming soon.
+
+## 🔒 Privacy
+
+All SIP signaling and media negotiation occur directly between your device and your SIP server. No analytics or third‑party tracking are embedded. Credentials are stored locally on the device.
+
 ## 🙌 Contributors
 
 We welcome contributions! Thanks to these awesome people:
@@ -108,3 +126,7 @@ Proudly supported by:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+Changelog and releases are available on the [Releases](https://github.com/voicetel/voicetel-phone-mobile/releases) page.
