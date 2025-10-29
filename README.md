@@ -1,6 +1,6 @@
 # 🎤 VoiceTel Phone
 
-A mobile WebRTC SIP phone built with Capacitor for VoiceTel communications (Android, optional iOS). Make and receive calls directly on your device with a modern, touch‑first interface.
+A mobile WebRTC SIP phone built with Capacitor for VoiceTel communications (Android and iOS). Make and receive calls directly on your device with a modern, touch‑first interface.
 
 ![Version](https://img.shields.io/badge/version-3.5.5-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
