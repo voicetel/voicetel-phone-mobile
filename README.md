@@ -4,7 +4,7 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 
 ![Version](https://img.shields.io/badge/version-3.5.5-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey)
 
 ## ✨ Features
 
@@ -14,6 +14,7 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **Incoming Calls** - Visual call notifications with caller ID display
 - **Call Controls** - Mute, hang up, call duration timer
 - **DTMF Support** - Send touch-tone digits during calls via dialpad or keyboard
+- **Ringing Handling** - Local ringback on 180/183; early media muted until answer
 
 ### 🔐 Security & Privacy
 - **Local Storage** - Credentials stored locally using browser storage
@@ -21,15 +22,13 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **No External Dependencies** - All data processing happens locally
 
 ### 🎨 User Interface
-- **Three-Panel Design**
-  - 📞 Phone - Main dialing and call interface
-  - 📋 Event Log - Real-time SIP message logging
+- **Tabbed Mobile UI**
+  - 📞 Phone - Dialer and active call screen
+  - 👥 Contacts - Device contacts integration (permission required)
+  - 🕘 History - Recent calls list
+  - 📋 Log - Real-time SIP message log
   - ⚙️ Settings - SIP configuration and credentials
-- **Visual Call Indicators** - Ringing animation, call status, duration display
-- **Desktop Notifications** - System notifications for incoming calls
-- **Keyboard Shortcuts**
-  - `Enter` - Answer incoming call
-  - `Escape` - Decline incoming call
+- **Visual Call Indicators** - Ringing status and call duration display
 
 ### 🔧 Advanced Features
 - **Caller ID Customization** - Set custom display name and 10-digit North American caller ID
