@@ -46,8 +46,22 @@ Download the latest release for your platform from the [Releases](https://github
 ### Build from Source
 
 #### Prerequisites
-- Node.js 16+ and npm
-- Git
+- Common
+  - Node.js 16+ and npm
+  - Git
+- Android
+  - Java JDK 17 (compatible with current Android Gradle Plugin)
+  - Android Studio (or Android SDK + commandline tools)
+  - Android SDK Platform 34 and Build-Tools 34.x
+  - adb (Android Debug Bridge)
+  - A device with USB debugging enabled or an Android emulator
+  - Release keystore and passwords for Play Store AAB signing
+- iOS
+  - macOS with Xcode 15+
+  - CocoaPods installed (`sudo gem install cocoapods`)
+  - Apple Developer account (Team access)
+  - Provisioning profiles and signing certificates
+  - An iOS device or Simulator
 
 #### Steps
 ```bash
