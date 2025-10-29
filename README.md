@@ -59,15 +59,23 @@ cd voicetel-phone-mobile
 # Install dependencies
 npm install
 
-# Run in development mode
-npm start
+# Android: prepare Capacitor project
+npx cap sync android
 
-# Build for your platform
-npm run build              # Current platform
-npm run build:mac          # macOS only
-npm run build:win          # Windows only
-npm run build:linux        # Linux only
-npm run build:all          # All platforms
+# Build a debug APK
+(cd android && ./gradlew assembleDebug)
+
+# Install debug APK to a device/emulator
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+
+# Build a release AAB for Play Store
+(cd android && ./gradlew bundleRelease)
+# Output: android/app/build/outputs/bundle/release/app-release.aab
+
+# Optional: iOS (on macOS)
+npx cap sync ios
+open ios/App/App.xcworkspace
+# Build/run from Xcode
 ```
 
 ## 🙌 Contributors
