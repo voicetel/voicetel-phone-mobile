@@ -2,7 +2,7 @@
 
 A cross-platform WebRTC SIP phone built with Electron for VoiceTel communications. Make and receive calls directly from your desktop with a modern, intuitive interface.
 
-![Version](https://img.shields.io/badge/version-3.4.0-blue)
+![Version](https://img.shields.io/badge/version-3.5.5-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
@@ -42,7 +42,7 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 ## 🚀 Installation
 
 ### Download Pre-built Binaries
-Download the latest release for your platform from the [Releases](https://github.com/voicetel/voicetel-phone/releases).
+Download the latest release for your platform from the [Releases](https://github.com/voicetel/voicetel-phone-mobile/releases).
 
 ### Build from Source
 
@@ -53,8 +53,8 @@ Download the latest release for your platform from the [Releases](https://github
 #### Steps
 ```bash
 # Clone the repository
-git clone https://github.com/voicetel/voicetel-phone.git
-cd voicetel-phone
+git clone https://github.com/voicetel/voicetel-phone-mobile.git
+cd voicetel-phone-mobile
 
 # Install dependencies
 npm install
@@ -68,6 +68,7 @@ npm run build:mac          # macOS only
 npm run build:win          # Windows only
 npm run build:linux        # Linux only
 npm run build:all          # All platforms
+```
 
 ## 🙌 Contributors
 
@@ -81,7 +82,7 @@ Proudly supported by:
 
 | Sponsor | Contribution |
 |---------|--------------|
-| [VoiceTel Communications](http://www.voicetel.com) | Primary development and testing infrastructure |
+| [VoiceTel Communications](https://www.voicetel.com) | Primary development and testing infrastructure |
 
 ## 📄 License
 
