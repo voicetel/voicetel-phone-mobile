@@ -96,3 +96,4 @@ pids/
 !build/
 !build/icons/
 !build/entitlements.mac.plist
+voicetel-release-key.keystore

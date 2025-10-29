@@ -3,6 +3,16 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.voicetel.phone"
     compileSdk rootProject.ext.compileSdkVersion
+    signingConfigs {
+        release {
+            // Configure via environment variables; falls back to repo keystore path
+            def keystorePath = System.getenv("ANDROID_KEYSTORE_FILE") ?: "../../voicetel-release-key.keystore"
+            storeFile file(keystorePath)
+            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: ""
+            keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+        }
+    }
     defaultConfig {
         applicationId "com.voicetel.phone"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -20,6 +30,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
