@@ -1114,6 +1114,7 @@
 			let ringingAudio = null;
 			let isRegistering = false; // Lock to prevent multiple registrations
 			let reRegisterTimeout = null; // Debounce re-registration
+			let activeCall = false; // Global flag to track if there's an active call
 			
 			// Bluetooth audio management
 			let bluetoothAudioContext = null;
@@ -1586,6 +1587,11 @@
 				} catch (error) {
 					log(`Call failed: ${error.message}`);
 					console.error(error);
+					// Clean up on error - clear currentSession if it was set
+					if (currentSession) {
+						currentSession = null;
+						hideCallControls();
+					}
 				}
 			}
 
@@ -1713,6 +1719,7 @@
 				incomingSession = null; // Clear incoming reference IMMEDIATELY
 				__callDirection = "incoming";
 				__answeredIncoming = true;
+				activeCall = true;
 
 				hideIncomingCallUI();
 				setupSessionHandlers(currentSession);
@@ -1893,6 +1900,7 @@
 					}
 
 					if (ringingStarted) { stopRinging(); ringingStarted = false; }
+					activeCall = true;
 					log("Call connected");
 
 					// Handle Bluetooth audio routing
@@ -2079,6 +2087,7 @@
 				currentSession = null;
 				__callDirection = null;
 				__answeredIncoming = false;
+				activeCall = false;
 				hideCallControls();
 				isMuted = false;
 				document.getElementById("muteBtn").textContent = "Mute";
@@ -2764,11 +2773,11 @@
 				log('Setting up app state listeners...');
 				
 				// Always set up visibility change listener as primary method
-				document.addEventListener('visibilitychange', function() {
+				document.addEventListener('visibilitychange', async function() {
 					log('Visibility change detected - document.hidden: ' + document.hidden);
 					if (!document.hidden) {
-						log('App brought to foreground (visibility) - WebSocket may have been killed, re-registering');
-						reRegister();
+						log('App brought to foreground (visibility) - WebSocket may have been killed, checking if re-registration needed...');
+						await reRegister(); // AWAIT the async function to ensure service check completes
 					} else {
 						log('App moved to background (visibility) - WebSocket will likely be killed');
 					}
@@ -2786,10 +2795,10 @@
 							const App = window.Capacitor.Plugins.App;
 							
 							// Listen for app state changes (only one listener)
-							App.addListener('appStateChange', ({ isActive }) => {
+							App.addListener('appStateChange', async ({ isActive }) => {
 								if (isActive) {
 									log('App brought to foreground (Capacitor) - checking registration');
-									reRegister();
+									await reRegister(); // AWAIT the async function to ensure service check completes
 								} else {
 									log('App moved to background (Capacitor)');
 								}
@@ -2806,9 +2815,76 @@
 			}
 
 			// Re-registration function with debouncing
-			function reRegister() {
+			async function reRegister() {
 				log('=== RE-REGISTER FUNCTION CALLED ===');
-				log('App brought to foreground - WebSocket was likely killed, forcing re-registration...');
+				
+				// CRITICAL: Do not re-register if there's an active call!
+				// First check: If we just returned from notification tap, skip re-registration
+				// This flag is set by MainActivity.onNewIntent() when notification is tapped
+				// The notification is only shown during active calls, so skip re-registration
+				if (window.__skipReRegisterForNotification === true) {
+					log('RE-REGISTER: Returning from notification tap (active call) - IMMEDIATELY skipping re-registration');
+					return;
+				}
+				
+				// Second check: If CallForegroundService is running, there's definitely an active call
+				// This is the most reliable check - service only runs during calls
+				// MUST check this BEFORE setting timeout - this blocks until we know
+				if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+					window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+					log('RE-REGISTER: Checking if CallForegroundService is running...');
+					try {
+						const CallService = window.Capacitor.Plugins.CallService;
+						const result = await CallService.isServiceRunning();
+						log('RE-REGISTER: Service check result: ' + JSON.stringify(result));
+						if (result && result.isRunning === true) {
+							log('RE-REGISTER: CallForegroundService is running (active call) - IMMEDIATELY skipping re-registration');
+							// Clear any pending timeout
+							if (reRegisterTimeout) {
+								clearTimeout(reRegisterTimeout);
+								reRegisterTimeout = null;
+							}
+							return;
+						} else {
+							log('RE-REGISTER: CallForegroundService is NOT running (isRunning=' + (result ? result.isRunning : 'null') + ') - will proceed with re-registration check');
+						}
+					} catch (err) {
+						log('RE-REGISTER: Failed to check service status: ' + (err.message || err) + ' - will proceed with other checks');
+						console.error('Service check error:', err);
+					}
+				} else {
+					log('RE-REGISTER: CallService plugin not available - skipping service check');
+				}
+				
+				// Second check: currentSession - if it exists, it means there's either:
+				// 1. An active call (has dialog or peer connection)
+				// 2. A call in progress (INVITE sent but not yet answered)
+				// In both cases, we must NOT re-register as it would terminate the call
+				if (currentSession) {
+					// Check if session has a request (INVITE sent/received) or is established (has dialog/peerConnection)
+					const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
+					const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
+					const hasPeerConnection = currentSession.sessionDescriptionHandler && 
+						currentSession.sessionDescriptionHandler.peerConnection !== null &&
+						currentSession.sessionDescriptionHandler.peerConnection !== undefined;
+					// Session is active if it has a request (call in progress) OR is established (has dialog/connection)
+					const isActive = hasRequest || hasDialog || hasPeerConnection;
+					
+					if (isActive) {
+						log('RE-REGISTER: Active call detected (currentSession exists with request/dialog/connection) - IMMEDIATELY skipping re-registration to avoid terminating call');
+						return;
+					} else {
+						// Session exists but appears inactive - this is a stale reference, clear it
+						log('RE-REGISTER: Found stale currentSession reference (no request/dialog/connection) - clearing and will proceed with re-registration');
+						currentSession = null;
+					}
+				}
+				
+				// Third check: If we just returned from notification tap during a call,
+				// give JavaScript state a moment to restore before checking again
+				// This is a safety net in case currentSession check above didn't catch it
+				
+				log('App brought to foreground - WebSocket may have been killed, checking if re-registration needed...');
 				
 				// Clear any existing timeout
 				if (reRegisterTimeout) {
@@ -2817,7 +2893,48 @@
 				}
 				
 				// Debounce re-registration - only execute after 500ms of no new calls
-				reRegisterTimeout = setTimeout(() => {
+				reRegisterTimeout = setTimeout(async () => {
+					// Check notification flag again in debounce (might be set during delay)
+					if (window.__skipReRegisterForNotification === true) {
+						log('RE-REGISTER: Notification flag detected during debounce - skipping re-registration');
+						return;
+					}
+					
+					// Check service status - this is the most reliable check for active calls
+					// Wait for result before proceeding
+					let serviceRunning = false;
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						try {
+							const CallService = window.Capacitor.Plugins.CallService;
+							const result = await CallService.isServiceRunning();
+							if (result && result.isRunning === true) {
+								serviceRunning = true;
+								log('RE-REGISTER: CallForegroundService is running (active call) - skipping re-registration during debounce');
+								return;
+							}
+						} catch (err) {
+							log('Failed to check service status in debounce: ' + err.message);
+						}
+					}
+					
+					// Double-check again before executing (in case call started during debounce period)
+					if (currentSession) {
+						const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
+						const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
+						const hasPeerConnection = currentSession.sessionDescriptionHandler && 
+							currentSession.sessionDescriptionHandler.peerConnection !== null &&
+							currentSession.sessionDescriptionHandler.peerConnection !== undefined;
+						const isActive = hasRequest || hasDialog || hasPeerConnection;
+						
+						if (isActive) {
+							log('RE-REGISTER: Active call detected during debounce (currentSession exists with request/dialog/connection) - skipping re-registration');
+							return;
+						} else {
+							log('RE-REGISTER: Found stale currentSession during debounce - clearing and will proceed');
+							currentSession = null;
+						}
+					}
 					executeReRegister();
 				}, 500);
 				
@@ -2833,13 +2950,66 @@
 					return;
 				}
 				
+				// CRITICAL: Do not re-register if there's an active call!
+				// Check currentSession - if it exists with request/dialog/peerConnection, it's active
+				// The foreground service keeps the WebSocket alive during calls,
+				// and unregistering would terminate the active call
+				if (currentSession) {
+					const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
+					const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
+					const hasPeerConnection = currentSession.sessionDescriptionHandler && 
+						currentSession.sessionDescriptionHandler.peerConnection !== null &&
+						currentSession.sessionDescriptionHandler.peerConnection !== undefined;
+					const isActive = hasRequest || hasDialog || hasPeerConnection;
+					
+					if (isActive) {
+						log('Active call detected (currentSession exists with request/dialog/connection) - skipping re-registration to avoid terminating call');
+						return;
+					} else {
+						log('Found stale currentSession reference in executeReRegister (no request/dialog/connection) - clearing and will proceed');
+						currentSession = null;
+					}
+				}
+				
 				const username = document.getElementById("username").value;
 				const password = document.getElementById("password").value;
 				log('Credentials check - username: ' + (username ? 'present' : 'missing') + ', password: ' + (password ? 'present' : 'missing'));
 				
 				if (username && password) {
-					// Always re-register when coming from background because WebSocket is killed
-					log('WebSocket connection was killed in background - re-registering...');
+					// Only re-register if no active call - WebSocket should still be alive during calls due to foreground service
+					log('No active call - checking if re-registration is needed...');
+					
+					// Check if we're already registered and the connection seems healthy
+					if (isRegistered && userAgent && userAgent.transport && userAgent.transport.ws) {
+						const ws = userAgent.transport.ws;
+						if (ws.readyState === WebSocket.OPEN) {
+							log('WebSocket connection appears healthy (readyState: OPEN) - skipping re-registration');
+							return;
+						} else {
+							log('WebSocket connection is not open (readyState: ' + ws.readyState + ') - will re-register');
+						}
+					}
+					
+					log('Re-registering with fresh WebSocket connection...');
+					
+					// FINAL SAFETY CHECK: Do not unregister if there's an active call!
+					// This is a critical check to prevent terminating active calls
+					if (currentSession) {
+						const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
+						const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
+						const hasPeerConnection = currentSession.sessionDescriptionHandler && 
+							currentSession.sessionDescriptionHandler.peerConnection !== null &&
+							currentSession.sessionDescriptionHandler.peerConnection !== undefined;
+						const isActive = hasRequest || hasDialog || hasPeerConnection;
+						
+						if (isActive) {
+							log('FINAL CHECK: Active call detected before unregister (request/dialog/connection) - ABORTING re-registration');
+							return;
+						} else {
+							log('FINAL CHECK: Found stale currentSession before unregister - clearing and will proceed');
+							currentSession = null;
+						}
+					}
 					
 					// Clean up any existing connection
 					if (userAgent) {
@@ -2851,9 +3021,25 @@
 						}
 					}
 
-					// Wait a moment then register fresh
+					// FINAL SAFETY CHECK: Do not register if call started during timeout
 					setTimeout(() => {
-						log('Re-registering with fresh WebSocket connection...');
+						if (currentSession) {
+							const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
+							const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
+							const hasPeerConnection = currentSession.sessionDescriptionHandler && 
+								currentSession.sessionDescriptionHandler.peerConnection !== null &&
+								currentSession.sessionDescriptionHandler.peerConnection !== undefined;
+							const isActive = hasRequest || hasDialog || hasPeerConnection;
+							
+							if (isActive) {
+								log('FINAL CHECK: Active call detected during register delay (request/dialog/connection) - ABORTING re-registration');
+								return;
+							} else {
+								log('FINAL CHECK: Found stale currentSession during register delay - clearing and will proceed');
+								currentSession = null;
+							}
+						}
+						log('Registering with fresh WebSocket connection...');
 						register();
 					}, 1000);
 				} else {

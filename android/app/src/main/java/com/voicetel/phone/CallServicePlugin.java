@@ -54,5 +54,19 @@ public class CallServicePlugin extends Plugin {
             call.reject("Activity not available");
         }
     }
+
+    @PluginMethod
+    public void isServiceRunning(PluginCall call) {
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            boolean isRunning = activity.isCallServiceRunning();
+            
+            JSObject ret = new JSObject();
+            ret.put("isRunning", isRunning);
+            call.resolve(ret);
+        } else {
+            call.reject("Activity not available");
+        }
+    }
 }
 

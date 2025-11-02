@@ -134,8 +134,11 @@ public class CallForegroundService extends Service {
 
     private Notification createNotification() {
         // Create intent to open app when notification is tapped
+        // Use SINGLE_TOP to bring existing activity to front instead of recreating it
+        // This preserves JavaScript state and prevents unnecessary re-registration
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        notificationIntent.putExtra("fromNotification", true); // Flag to skip re-registration
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this,
             0,

@@ -1,5 +1,7 @@
 package com.voicetel.phone;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -41,9 +43,16 @@ public class MainActivity extends BridgeActivity {
         Log.d(TAG, "MainActivity onCreate completed");
         
         // Handle hangup intent from notification
-        if (getIntent() != null && "com.voicetel.phone.HANGUP".equals(getIntent().getAction())) {
-            Log.d(TAG, "Hangup intent received from notification");
-            // JavaScript will handle the hangup via window.location or message
+        Intent intent = getIntent();
+        if (intent != null) {
+            if ("com.voicetel.phone.HANGUP".equals(intent.getAction())) {
+                Log.d(TAG, "Hangup intent received from notification");
+                // JavaScript will handle the hangup via window.location or message
+            } else if (intent.getBooleanExtra("fromNotification", false)) {
+                Log.d(TAG, "Activity opened from notification - will skip re-registration");
+                // Tell JavaScript to skip re-registration via window variable
+                // This will be set after WebView is ready
+            }
         }
     }
     
@@ -65,8 +74,38 @@ public class MainActivity extends BridgeActivity {
         setIntent(intent);
         
         // Handle hangup intent from notification
-        if (intent != null && "com.voicetel.phone.HANGUP".equals(intent.getAction())) {
-            Log.d(TAG, "Hangup intent received from notification (onNewIntent)");
+        if (intent != null) {
+            if ("com.voicetel.phone.HANGUP".equals(intent.getAction())) {
+                Log.d(TAG, "Hangup intent received from notification (onNewIntent)");
+            } else if (intent.getBooleanExtra("fromNotification", false)) {
+                Log.d(TAG, "Activity resumed from notification (onNewIntent) - injecting JavaScript flag to skip re-registration");
+                // Inject JavaScript flag to prevent re-registration when returning from notification
+                // The flag will be checked in reRegister() function
+                runOnUiThread(() -> {
+                    // Inject flag immediately - WebView should be ready since activity already exists
+                    try {
+                        String js = "if (typeof window !== 'undefined') { window.__skipReRegisterForNotification = true; console.log('Set __skipReRegisterForNotification flag (immediate)'); }";
+                        getBridge().getWebView().evaluateJavascript(js, null);
+                        Log.d(TAG, "Injected JavaScript flag to skip re-registration (immediate)");
+                        // Also try with a small delay as backup
+                        getBridge().getWebView().postDelayed(() -> {
+                            try {
+                                String js2 = "if (typeof window !== 'undefined') { window.__skipReRegisterForNotification = true; console.log('Set __skipReRegisterForNotification flag (delayed backup)'); }";
+                                getBridge().getWebView().evaluateJavascript(js2, null);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to inject JavaScript flag (backup)", e);
+                            }
+                        }, 100);
+                        // Clear the flag after 3 seconds to allow normal re-registration later
+                        getBridge().getWebView().postDelayed(() -> {
+                            String clearJs = "if (typeof window !== 'undefined') { window.__skipReRegisterForNotification = false; console.log('Cleared __skipReRegisterForNotification flag'); }";
+                            getBridge().getWebView().evaluateJavascript(clearJs, null);
+                        }, 3000);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to inject JavaScript flag", e);
+                    }
+                });
+            }
         }
     }
 
@@ -98,5 +137,17 @@ public class MainActivity extends BridgeActivity {
         } else {
             startService(serviceIntent);
         }
+    }
+
+    public boolean isCallServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (CallForegroundService.class.getName().equals(service.service.getClassName())) {
+                Log.d(TAG, "CallForegroundService is running");
+                return true;
+            }
+        }
+        Log.d(TAG, "CallForegroundService is NOT running");
+        return false;
     }
 }
