@@ -68,5 +68,36 @@ public class CallServicePlugin extends Plugin {
             call.reject("Activity not available");
         }
     }
+
+    @PluginMethod
+    public void showIncomingCallNotification(PluginCall call) {
+        String callerName = call.getString("callerName", "Unknown");
+        String callerNumber = call.getString("callerNumber", "");
+        
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            activity.showIncomingCallNotification(callerName, callerNumber);
+            
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } else {
+            call.reject("Activity not available");
+        }
+    }
+
+    @PluginMethod
+    public void dismissIncomingCallNotification(PluginCall call) {
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            activity.dismissIncomingCallNotification();
+            
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } else {
+            call.reject("Activity not available");
+        }
+    }
 }
 

@@ -1643,6 +1643,13 @@
 				log(`Incoming call from ${callerName} ${formattedNumber}`);
 				log("Press Enter to answer or Escape to decline");
 
+				// Show incoming call notification (Android)
+				// Don't await - fire and forget to avoid blocking the call handling
+				showIncomingCallNotification(callerName, formattedNumber).catch(err => {
+					log('Error in showIncomingCallNotification: ' + err.message);
+					console.error('Notification error:', err);
+				});
+
 				incomingCallTimeout = setTimeout(() => {
 					if (incomingSession) {
 						log("Auto-declining unanswered call after 30 seconds");
@@ -1663,6 +1670,7 @@
 						incomingCallTimeout = null;
 					}
 					hideIncomingCallUI();
+					dismissIncomingCallNotification();
 
 					// Only add "missed" if it was NOT answered and NOT manually declined
 					if (!wasAnswered && !session.__declinedByUser) {
@@ -1683,6 +1691,7 @@
 						incomingCallTimeout = null;
 					}
 					hideIncomingCallUI();
+					dismissIncomingCallNotification();
 					log("Incoming call failed");
 					incomingSession = null;
 				});
@@ -1693,6 +1702,7 @@
 						incomingCallTimeout = null;
 					}
 					hideIncomingCallUI();
+					dismissIncomingCallNotification();
 					log("Incoming call was rejected");
 					incomingSession = null;
 				});
@@ -1713,6 +1723,9 @@
 					clearTimeout(incomingCallTimeout);
 					incomingCallTimeout = null;
 				}
+
+				// Dismiss incoming call notification
+				dismissIncomingCallNotification();
 
 				// Transfer session to current and mark as answered
 				currentSession = incomingSession;
@@ -1740,6 +1753,12 @@
 					incomingCallTimeout = null;
 				}
 
+				// Stop ringing
+				stopRinging();
+
+				// Dismiss incoming call notification
+				dismissIncomingCallNotification();
+
 				// Record as declined (this is correct for a manual press)
 				const num =
 					__incomingRaw && __incomingRaw !== "Unknown"
@@ -1754,10 +1773,12 @@
 				incomingSession.__declinedByUser = true;
 
 				// Send busy
+				log("Sending SIP 486 Busy Here response...");
 				incomingSession.reject({
 					statusCode: 486,
 					reasonPhrase: "Busy Here",
 				});
+				log("SIP reject(486) called on incomingSession");
 
 				hideIncomingCallUI();
 				log("Call declined");
@@ -3203,6 +3224,63 @@
 					log('Failed to update call service number: ' + error.message);
 				}
 			}
+
+			// Incoming call notification management
+			async function showIncomingCallNotification(callerName, callerNumber) {
+				try {
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						const CallService = window.Capacitor.Plugins.CallService;
+						await CallService.showIncomingCallNotification({ 
+							callerName: callerName || 'Unknown',
+							callerNumber: callerNumber || ''
+						});
+						log('Incoming call notification displayed');
+					}
+				} catch (error) {
+					log('Failed to show incoming call notification: ' + error.message);
+					console.error('Notification error:', error);
+				}
+			}
+
+			async function dismissIncomingCallNotification() {
+				try {
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						const CallService = window.Capacitor.Plugins.CallService;
+						await CallService.dismissIncomingCallNotification();
+						log('Incoming call notification dismissed');
+					}
+				} catch (error) {
+					log('Failed to dismiss incoming call notification: ' + error.message);
+					console.error('Notification error:', error);
+				}
+			}
+
+			// Handle notification actions (Answer/Decline from notification)
+			window.handleNotificationAction = function(action, data) {
+				log('Notification action received: ' + action);
+				
+				if (action === 'ANSWER_CALL') {
+					if (incomingSession) {
+						answerCall();
+					} else {
+						log('No incoming call to answer');
+					}
+				} else if (action === 'DECLINE_CALL') {
+					if (incomingSession) {
+						declineCall();
+					} else {
+						log('No incoming call to decline');
+					}
+				} else if (action === 'HANGUP') {
+					if (currentSession) {
+						hangup();
+					} else {
+						log('No active call to hang up');
+					}
+				}
+			};
 
 			// Setup audio session for lock screen continuity
 			function setupAudioSession() {
