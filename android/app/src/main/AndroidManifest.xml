@@ -33,6 +33,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Foreground service for keeping calls alive in background -->
+        <service
+            android:name=".CallForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
     </application>
 
     <!-- Permissions -->
@@ -47,6 +54,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Android 13+ (API 33+) requires POST_NOTIFICATIONS permission for notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <!-- WebRTC specific permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH" />

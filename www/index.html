@@ -2012,6 +2012,11 @@
 				
 				// Request wake lock to prevent screen sleep during calls
 				requestWakeLock();
+				
+				// Start Android foreground service to keep call alive in background
+				const callNumber = __originalCallNumber || __incomingRaw || 
+					document.getElementById("callNumber").value || "";
+				startCallService(callNumber);
 			}
 
 			function hideCallControls() {
@@ -2024,6 +2029,9 @@
 				// Release wake lock when call ends
 				releaseWakeLock();
 				stopCallTimer();
+				
+				// Stop Android foreground service
+				stopCallService();
 			}
 
 			function endCall() {
@@ -2040,6 +2048,9 @@
 				releaseWakeLock();
 				// Stop call timer
 				stopCallTimer();
+				
+				// Stop Android foreground service
+				stopCallService();
 				
 				// Save call to history
 				try {
@@ -2962,6 +2973,48 @@
 					}
 				} catch (error) {
 					log('Error releasing wake lock: ' + error.message);
+				}
+			}
+
+			// Android foreground service management for call continuity
+			async function startCallService(callNumber) {
+				try {
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						const CallService = window.Capacitor.Plugins.CallService;
+						await CallService.startCall({ callNumber: callNumber || '' });
+						log('Android call service started');
+					}
+				} catch (error) {
+					log('Failed to start call service: ' + error.message);
+					console.error('CallService error:', error);
+				}
+			}
+
+			async function stopCallService() {
+				try {
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						const CallService = window.Capacitor.Plugins.CallService;
+						await CallService.stopCall();
+						log('Android call service stopped');
+					}
+				} catch (error) {
+					log('Failed to stop call service: ' + error.message);
+					console.error('CallService error:', error);
+				}
+			}
+
+			async function updateCallServiceNumber(callNumber) {
+				try {
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						const CallService = window.Capacitor.Plugins.CallService;
+						await CallService.updateCallNumber({ callNumber: callNumber || '' });
+						log('Android call service number updated');
+					}
+				} catch (error) {
+					log('Failed to update call service number: ' + error.message);
 				}
 			}
 

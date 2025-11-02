@@ -2,7 +2,7 @@
 	"name": "voicetel-phone",
 	"version": "3.5.5",
 	"description": "VoiceTel Phone",
-    "scripts": {},
+	"scripts": {},
 	"keywords": [
 		"voip",
 		"sip",
@@ -16,9 +16,10 @@
 	},
 	"homepage": "https://github.com/voicetel/voicetel-phone-mobile",
 	"license": "MIT",
-    "devDependencies": {
-        "@capacitor/ios": "^7.4.4"
-    },
+	"devDependencies": {
+		"@capacitor/ios": "^7.4.4",
+		"typescript": "^5.9.3"
+	},
 	"dependencies": {
 		"@capacitor-community/contacts": "^7.0.0",
 		"@capacitor/android": "^7.4.4",
