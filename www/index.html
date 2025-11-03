@@ -2039,11 +2039,15 @@
 					// Configure audio session for lock screen continuity
 					configureAudioSession();
 					
-					// Auto-start recording if enabled
+					// Auto-start recording if enabled (only when call is answered/connected)
 					const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
-					if (recordingEnabled) {
+					if (recordingEnabled && activeCall && session === currentSession) {
+						// Wait a bit for audio tracks to be fully ready after call is answered
 						setTimeout(async () => {
-							await startRecording();
+							// Double-check call is still active before starting recording
+							if (activeCall && currentSession && currentSession === session) {
+								await startRecording();
+							}
 						}, 500); // Small delay to ensure audio tracks are ready
 					}
 
