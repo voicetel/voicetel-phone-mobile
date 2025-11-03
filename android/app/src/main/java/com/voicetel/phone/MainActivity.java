@@ -8,17 +8,20 @@ import android.content.Context;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     private static final String TAG = "MainActivity";
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1001;
+    private static final int RECORD_AUDIO_PERMISSION_REQUEST_CODE = 1002;
     private static final String INCOMING_CALL_CHANNEL_ID = "voicetel_incoming_call_channel";
     private static final int INCOMING_CALL_NOTIFICATION_ID = 2;
 
@@ -46,6 +49,19 @@ public class MainActivity extends BridgeActivity {
             }
         }
         
+        // Request RECORD_AUDIO permission for call recording
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Requesting RECORD_AUDIO permission");
+            ActivityCompat.requestPermissions(
+                this,
+                new String[]{Manifest.permission.RECORD_AUDIO},
+                RECORD_AUDIO_PERMISSION_REQUEST_CODE
+            );
+        } else {
+            Log.d(TAG, "RECORD_AUDIO permission already granted");
+        }
+        
         Log.d(TAG, "MainActivity onCreate completed");
         
         // Create incoming call notification channel
@@ -66,6 +82,12 @@ public class MainActivity extends BridgeActivity {
                 Log.d(TAG, "POST_NOTIFICATIONS permission granted");
             } else {
                 Log.d(TAG, "POST_NOTIFICATIONS permission denied - notifications will not be visible");
+            }
+        } else if (requestCode == RECORD_AUDIO_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "RECORD_AUDIO permission granted");
+            } else {
+                Log.d(TAG, "RECORD_AUDIO permission denied - call recording will not be available");
             }
         }
     }
@@ -265,5 +287,122 @@ public class MainActivity extends BridgeActivity {
         }
         Log.d(TAG, "CallForegroundService is NOT running");
         return false;
+    }
+
+    public String saveRecordingFile(String filename, String base64Data, String mimeType) throws Exception {
+        // Get the app's external files directory (Music/CallRecordings)
+        java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
+        if (!recordingsDir.exists()) {
+            recordingsDir.mkdirs();
+        }
+        
+        // Create the file
+        java.io.File recordingFile = new java.io.File(recordingsDir, filename);
+        
+        // Decode base64 data
+        byte[] audioData = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
+        
+        // Write to file
+        java.io.FileOutputStream fos = new java.io.FileOutputStream(recordingFile);
+        fos.write(audioData);
+        fos.close();
+        
+        Log.d(TAG, "Recording saved: " + recordingFile.getAbsolutePath());
+        
+        return recordingFile.getAbsolutePath();
+    }
+    
+    public String saveRecordingFileWithConversion(String filename, String base64Data, String mimeType, String targetFormat) throws Exception {
+        // For now, save as-is and log conversion request
+        // TODO: Implement format conversion using ffmpeg or LAME library
+        // This would require adding dependencies like ffmpeg-android or LAME encoder
+        Log.d(TAG, "Conversion requested: " + mimeType + " -> " + targetFormat);
+        Log.d(TAG, "Note: Format conversion not yet implemented. Saving in original format.");
+        
+        // For MP3 conversion, you would need to:
+        // 1. Add ffmpeg-android library or LAME encoder
+        // 2. Decode the input file
+        // 3. Re-encode to MP3
+        // 4. Save with new extension
+        
+        return saveRecordingFile(filename, base64Data, mimeType);
+    }
+
+    public String getRecordingFileUrl(String filename) throws Exception {
+        java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
+        java.io.File recordingFile = new java.io.File(recordingsDir, filename);
+        
+        if (!recordingFile.exists()) {
+            throw new Exception("Recording file not found: " + filename);
+        }
+        
+        // Use FileProvider for secure file access in WebView
+        try {
+            Uri fileUri = FileProvider.getUriForFile(
+                this,
+                getPackageName() + ".fileprovider",
+                recordingFile
+            );
+            String fileUrl = fileUri.toString();
+            Log.d(TAG, "File URI: " + fileUrl);
+            return fileUrl;
+        } catch (Exception e) {
+            // Fallback to file:// if FileProvider fails
+            String fileUrl = "file://" + recordingFile.getAbsolutePath();
+            Log.d(TAG, "File URL (fallback): " + fileUrl);
+            return fileUrl;
+        }
+    }
+
+    public String getRecordingFileAsDataUrl(String filename) throws Exception {
+        java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
+        java.io.File recordingFile = new java.io.File(recordingsDir, filename);
+        
+        if (!recordingFile.exists()) {
+            throw new Exception("Recording file not found: " + filename);
+        }
+        
+        // Read file content
+        java.io.FileInputStream fis = new java.io.FileInputStream(recordingFile);
+        byte[] fileBytes = new byte[(int) recordingFile.length()];
+        fis.read(fileBytes);
+        fis.close();
+        
+        // Convert to base64
+        String base64 = android.util.Base64.encodeToString(fileBytes, android.util.Base64.NO_WRAP);
+        
+        // Determine MIME type from extension
+        String mimeType = "audio/webm"; // default
+        String lowerFilename = filename.toLowerCase();
+        if (lowerFilename.endsWith(".webm")) {
+            mimeType = "audio/webm";
+        } else if (lowerFilename.endsWith(".ogg")) {
+            mimeType = "audio/ogg";
+        } else if (lowerFilename.endsWith(".mp4") || lowerFilename.endsWith(".m4a")) {
+            mimeType = "audio/mp4";
+        } else if (lowerFilename.endsWith(".mp3")) {
+            mimeType = "audio/mpeg";
+        } else if (lowerFilename.endsWith(".wav")) {
+            mimeType = "audio/wav";
+        }
+        
+        // Return data URL
+        String dataUrl = "data:" + mimeType + ";base64," + base64;
+        Log.d(TAG, "Converted file to data URL, size: " + fileBytes.length + " bytes");
+        return dataUrl;
+    }
+
+    public boolean deleteRecordingFile(String filename) throws Exception {
+        java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
+        java.io.File recordingFile = new java.io.File(recordingsDir, filename);
+        
+        if (recordingFile.exists()) {
+            boolean deleted = recordingFile.delete();
+            Log.d(TAG, "Recording file deleted: " + filename + " (" + deleted + ")");
+            return deleted;
+        } else {
+            Log.d(TAG, "Recording file not found: " + filename);
+            return false;
+        }
     }
 }

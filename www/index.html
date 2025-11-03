@@ -271,6 +271,21 @@
 				color: #333;
 			}
 
+			.btn-secondary.recording {
+				background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+				color: white;
+				animation: pulse 2s infinite;
+			}
+
+			@keyframes pulse {
+				0%, 100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.7;
+				}
+			}
+
 			button:disabled {
 				opacity: 0.5;
 				cursor: not-allowed;
@@ -653,6 +668,40 @@
 								margin-top: 20px;
 							"
 						>
+							<input type="checkbox" id="enableCallRecording" />
+							<span>Enable call recording</span>
+						</label>
+						<small
+							style="color: #999; display: block; margin-top: 8px"
+						>
+							🎙️ Record calls automatically when enabled
+						</small>
+						<div
+							style="
+								color: #ff6b6b;
+								font-size: 12px;
+								margin-top: 8px;
+								padding: 8px;
+								background-color: #fff5f5;
+								border-left: 3px solid #ff6b6b;
+								border-radius: 4px;
+							"
+						>
+							⚠️ <strong>Legal Notice:</strong> Only enable call recording where it is legally permitted. 
+							Recording calls without consent may violate privacy laws in your jurisdiction. 
+							Always inform all parties before recording.
+						</div>
+
+						<label
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+								color: #667eea;
+								font-weight: 600;
+								margin-top: 20px;
+							"
+						>
 							<input type="checkbox" id="hideEventLog" />
 							<span>Hide Event Log</span>
 						</label>
@@ -921,6 +970,9 @@
 						<button class="btn-secondary" onclick="clearHistory()">
 							Clear History
 						</button>
+						<button class="btn-secondary" onclick="clearRecordings()">
+							Clear Recordings
+						</button>
 						<button
 							class="btn-secondary"
 							onclick="renderCallHistory()"
@@ -929,6 +981,7 @@
 						</button>
 					</div>
 				</div>
+
 			</div>
 
 			<div class="audio-container">
@@ -990,6 +1043,8 @@
 									.checked,
 							hideEventLog:
 								document.getElementById("hideEventLog").checked,
+							enableCallRecording:
+								document.getElementById("enableCallRecording").checked,
 							saveCredentials: true,
 						};
 
@@ -1038,6 +1093,8 @@
 							config.registerOnStartup || false;
 						document.getElementById("hideEventLog").checked =
 							config.hideEventLog || false;
+						document.getElementById("enableCallRecording").checked =
+							config.enableCallRecording || false;
 						document.getElementById("saveCredentials").checked =
 							config.saveCredentials || false;
 
@@ -1070,7 +1127,7 @@
 					log("All saved data cleared");
 				},
 
-				async addCallToHistory(type, number, duration) {
+				async addCallToHistory(type, number, duration, recording = null) {
 					try {
 						const history =
 							(await localforage.getItem(this.HISTORY_KEY)) || [];
@@ -1079,6 +1136,7 @@
 							number,
 							duration,
 							timestamp: new Date().toISOString(),
+							recording: recording || null, // Store recording filename if available
 						});
 
 						// Keep last 100 calls
@@ -1092,12 +1150,53 @@
 					}
 				},
 
+				async updateCallHistoryWithRecording(filename) {
+					try {
+						const history = await this.getHistory();
+						// Find the most recent call entry (first in array) and add recording filename
+						if (history.length > 0 && !history[0].recording) {
+							history[0].recording = filename;
+							await localforage.setItem(this.HISTORY_KEY, history);
+							log(`Recording ${filename} linked to call history`);
+						}
+					} catch (e) {
+						console.error("Failed to update call history with recording:", e);
+					}
+				},
+
 				async getHistory() {
 					return (await localforage.getItem(this.HISTORY_KEY)) || [];
 				},
 
 				async clearHistory() {
 					await localforage.removeItem(this.HISTORY_KEY);
+				},
+
+				async addRecordingToHistory(recording) {
+					try {
+						const RECORDINGS_KEY = "voicetel_recordings";
+						const recordings = (await localforage.getItem(RECORDINGS_KEY)) || [];
+						recordings.unshift(recording);
+						
+						// Keep last 50 recordings
+						if (recordings.length > 50) {
+							recordings.length = 50;
+						}
+						
+						await localforage.setItem(RECORDINGS_KEY, recordings);
+					} catch (e) {
+						console.error("Recording metadata save failed:", e);
+					}
+				},
+
+				async getRecordings() {
+					const RECORDINGS_KEY = "voicetel_recordings";
+					return (await localforage.getItem(RECORDINGS_KEY)) || [];
+				},
+
+				async clearRecordings() {
+					const RECORDINGS_KEY = "voicetel_recordings";
+					await localforage.removeItem(RECORDINGS_KEY);
 				},
 			};
 
@@ -1115,6 +1214,16 @@
 			let isRegistering = false; // Lock to prevent multiple registrations
 			let reRegisterTimeout = null; // Debounce re-registration
 			let activeCall = false; // Global flag to track if there's an active call
+			let isRecording = false;
+			let mediaRecorder = null;
+			let recordedChunks = [];
+			let recordingStream = null;
+			let recordingAudioContext = null;
+			let recordingDestination = null;
+			let recordingCallStartTime = null; // Store call start time for recording metadata
+			let recordingCallerNumber = null; // Store caller number for recording metadata
+			let recordingCallDirection = null; // Store call direction for recording metadata
+			let currentRecordingFilename = null; // Store filename for linking to call history
 			
 			// Bluetooth audio management
 			let bluetoothAudioContext = null;
@@ -1929,6 +2038,14 @@
 					
 					// Configure audio session for lock screen continuity
 					configureAudioSession();
+					
+					// Auto-start recording if enabled
+					const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
+					if (recordingEnabled) {
+						setTimeout(async () => {
+							await startRecording();
+						}, 500); // Small delay to ensure audio tracks are ready
+					}
 
 					if (
 						currentSession &&
@@ -2034,6 +2151,328 @@
 				log(isMuted ? "Muted" : "Unmuted");
 			}
 
+
+			async function startRecording() {
+				if (isRecording) {
+					log("Recording already in progress");
+					return;
+				}
+
+				// Check if recording is enabled in settings
+				const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
+				if (!recordingEnabled) {
+					log("Call recording is disabled in settings");
+					return;
+				}
+
+				try {
+					const pc = currentSession.sessionDescriptionHandler.peerConnection;
+					
+					if (!pc) {
+						throw new Error("PeerConnection not available");
+					}
+
+					log("Checking audio tracks...");
+					
+					// Create audio context for mixing
+					recordingAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+					recordingDestination = recordingAudioContext.createMediaStreamDestination();
+					recordingStream = recordingDestination.stream;
+
+					let tracksAdded = 0;
+
+					// Get remote audio tracks (what we hear)
+					const receivers = pc.getReceivers();
+					log(`Found ${receivers.length} receivers`);
+					receivers.forEach((receiver, idx) => {
+						if (receiver.track && receiver.track.kind === "audio") {
+							log(`Adding remote audio track ${idx}: ${receiver.track.id}, enabled: ${receiver.track.enabled}, muted: ${receiver.track.muted}`);
+							try {
+								const remoteSource = recordingAudioContext.createMediaStreamSource(new MediaStream([receiver.track]));
+								remoteSource.connect(recordingDestination);
+								tracksAdded++;
+							} catch (e) {
+								log(`Failed to add remote track ${idx}: ${e.message}`);
+								console.error("Remote track error:", e);
+							}
+						}
+					});
+
+					// Get local audio tracks (what we say)
+					const senders = pc.getSenders();
+					log(`Found ${senders.length} senders`);
+					senders.forEach((sender, idx) => {
+						if (sender.track && sender.track.kind === "audio") {
+							log(`Adding local audio track ${idx}: ${sender.track.id}, enabled: ${sender.track.enabled}, muted: ${sender.track.muted}`);
+							try {
+								const localSource = recordingAudioContext.createMediaStreamSource(new MediaStream([sender.track]));
+								localSource.connect(recordingDestination);
+								tracksAdded++;
+							} catch (e) {
+								log(`Failed to add local track ${idx}: ${e.message}`);
+								console.error("Local track error:", e);
+							}
+						}
+					});
+
+					if (tracksAdded === 0) {
+						throw new Error("No audio tracks available for recording");
+					}
+
+					log(`Connected ${tracksAdded} audio tracks to recording stream`);
+					log(`Recording stream has ${recordingStream.getAudioTracks().length} tracks`);
+
+					// Check if MediaRecorder is available
+					if (!window.MediaRecorder) {
+						throw new Error("MediaRecorder not supported");
+					}
+
+					if (!MediaRecorder.isTypeSupported) {
+						throw new Error("MediaRecorder.isTypeSupported not available");
+					}
+
+					// Find supported MIME type
+					// Note: MP3 is not supported by MediaRecorder API directly
+					// Options are checked in order of preference
+					const options = [
+						'audio/webm;codecs=opus',  // Best quality, widely supported
+						'audio/webm',              // WebM fallback
+						'audio/ogg;codecs=opus',   // OGG/Opus
+						'audio/mp4',               // MP4/AAC
+						'audio/mpeg',              // MP3 (unlikely to be supported)
+						'audio/wav'                // WAV (unlikely to be supported)
+					];
+					
+					log("Checking supported audio formats...");
+					let mimeType = null;
+					for (let option of options) {
+						const supported = MediaRecorder.isTypeSupported(option);
+						log(`  ${option}: ${supported ? '✓' : '✗'}`);
+						if (supported && !mimeType) {
+							mimeType = option;
+						}
+					}
+					
+					if (!mimeType) {
+						// Fallback to default
+						mimeType = 'audio/webm';
+						log(`No preferred format supported, using default: ${mimeType}`);
+					} else {
+						log(`Selected MIME type: ${mimeType}`);
+					}
+
+					// Verify the stream has tracks before creating MediaRecorder
+					if (recordingStream.getTracks().length === 0) {
+						throw new Error("Recording stream has no tracks");
+					}
+
+					// Create MediaRecorder
+					recordedChunks = [];
+					log("Creating MediaRecorder...");
+					mediaRecorder = new MediaRecorder(recordingStream, {
+						mimeType: mimeType
+					});
+
+					mediaRecorder.ondataavailable = (event) => {
+						if (event.data && event.data.size > 0) {
+							recordedChunks.push(event.data);
+							log(`Recording data chunk: ${event.data.size} bytes (total chunks: ${recordedChunks.length})`);
+						}
+					};
+
+					mediaRecorder.onstop = async () => {
+						log(`Recording stopped. Total chunks: ${recordedChunks.length}, total size: ${recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0)} bytes`);
+						await saveRecording();
+					};
+
+					mediaRecorder.onerror = (event) => {
+						log(`Recording error: ${event.error || 'Unknown error'}`);
+						console.error("Recording error:", event);
+						isRecording = false;
+					};
+
+					// Store call info for recording metadata
+					recordingCallStartTime = callStartTime || Date.now();
+					recordingCallerNumber = __callDirection === "outgoing" 
+						? (__originalCallNumber || "Unknown")
+						: (__incomingRaw || __incomingDisplay || "Unknown");
+					recordingCallDirection = __callDirection || "unknown";
+					
+					// Start recording
+					log("Starting MediaRecorder...");
+					mediaRecorder.start(1000); // Collect data every second
+					isRecording = true;
+					log("Recording started successfully");
+
+				} catch (error) {
+					log(`Failed to start recording: ${error.message}`);
+					console.error("Recording start error:", error);
+					isRecording = false;
+					
+					// Clean up on error
+					if (recordingAudioContext) {
+						try {
+							recordingAudioContext.close();
+						} catch (e) {}
+						recordingAudioContext = null;
+						recordingDestination = null;
+						recordingStream = null;
+					}
+				}
+			}
+
+			async function stopRecording() {
+				if (!isRecording || !mediaRecorder) {
+					return null;
+				}
+
+				try {
+					// Generate filename before stopping (so we can use it for history entry)
+					const callerNumber = recordingCallerNumber || "Unknown";
+					const filenameTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+					const filename = `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mediaRecorder.mimeType)}`;
+					currentRecordingFilename = filename;
+					
+					if (mediaRecorder.state === 'recording') {
+						mediaRecorder.stop();
+					}
+					
+					isRecording = false;
+					log("Recording stopped, saving file...");
+
+					// Clean up audio context
+					if (recordingAudioContext) {
+						recordingAudioContext.close();
+						recordingAudioContext = null;
+						recordingDestination = null;
+						recordingStream = null;
+					}
+					
+					// Wait a bit for saveRecording to complete (it's called from MediaRecorder's onstop event)
+					// Then clear metadata and return filename
+					await new Promise(resolve => setTimeout(resolve, 500));
+					
+					const savedFilename = currentRecordingFilename;
+					
+					// Clear recording metadata
+					recordingCallStartTime = null;
+					recordingCallerNumber = null;
+					recordingCallDirection = null;
+					currentRecordingFilename = null;
+
+					return savedFilename;
+
+				} catch (error) {
+					log(`Failed to stop recording: ${error.message}`);
+					console.error("Recording stop error:", error);
+					isRecording = false;
+					currentRecordingFilename = null;
+					return null;
+				}
+			}
+
+			async function saveRecording() {
+				if (recordedChunks.length === 0) {
+					log("No recording data to save");
+					return;
+				}
+
+				try {
+					const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+					
+					// Convert blob to base64 (handle large files properly)
+					const base64 = await new Promise((resolve, reject) => {
+						const reader = new FileReader();
+						reader.onloadend = () => {
+							const base64String = reader.result.split(',')[1]; // Remove data:audio/webm;base64, prefix
+							resolve(base64String);
+						};
+						reader.onerror = reject;
+						reader.readAsDataURL(blob);
+					});
+
+					// Use filename generated in stopRecording() or generate new one
+					const callerNumber = recordingCallerNumber || "Unknown";
+					const callTimestamp = recordingCallStartTime ? new Date(recordingCallStartTime).toISOString() : new Date().toISOString();
+					const filename = currentRecordingFilename || (() => {
+						const filenameTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+						return `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mediaRecorder.mimeType)}`;
+					})();
+
+					// Save via native plugin if available
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						try {
+							const CallService = window.Capacitor.Plugins.CallService;
+							await CallService.saveRecording({
+								filename: filename,
+								data: base64,
+								mimeType: mediaRecorder.mimeType
+							});
+							log(`Recording saved: ${filename}`);
+							
+							// Recording should already be linked to call history via addCallToHistory() in endCall()
+							// But update it just in case it wasn't linked (backward compatibility)
+							await Storage.updateCallHistoryWithRecording(filename);
+							
+							// Also store recording metadata separately (for backward compatibility)
+							await Storage.addRecordingToHistory({
+								filename: filename,
+								callerNumber: callerNumber,
+								direction: recordingCallDirection || "unknown",
+								timestamp: callTimestamp,
+								duration: getCallDuration()
+							});
+						} catch (error) {
+							log(`Failed to save recording via plugin: ${error.message}`);
+							console.error("Save recording error:", error);
+							// Fallback: try to download
+							downloadRecording(blob, filename);
+						}
+					} else {
+						// Fallback: download file (for web)
+						downloadRecording(blob, filename);
+					}
+
+					// Clear recorded chunks
+					recordedChunks = [];
+					mediaRecorder = null;
+
+				} catch (error) {
+					log(`Failed to save recording: ${error.message}`);
+					console.error("Save recording error:", error);
+				}
+			}
+
+			function downloadRecording(blob, filename) {
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+				log(`Recording downloaded: ${filename}`);
+			}
+
+			function getFileExtension(mimeType) {
+				if (mimeType.includes('webm')) return 'webm';
+				if (mimeType.includes('ogg')) return 'ogg';
+				if (mimeType.includes('mp4')) return 'm4a';  // MP4 audio is typically M4A
+				if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3';
+				if (mimeType.includes('wav')) return 'wav';
+				return 'webm';
+			}
+
+			function getCallDuration() {
+				if (!callStartTime) return "00:00";
+				const duration = Math.floor((Date.now() - callStartTime) / 1000);
+				const minutes = Math.floor(duration / 60);
+				const seconds = duration % 60;
+				return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+			}
+
 			function showCallControls() {
 				document.getElementById("callControls").classList.add("active");
 				document.getElementById("callBtn").disabled = true;
@@ -2063,7 +2502,7 @@
 				stopCallService();
 			}
 
-			function endCall() {
+			async function endCall() {
 				// Clean up WebSocket event listeners
 				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
 					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
@@ -2081,7 +2520,13 @@
 				// Stop Android foreground service
 				stopCallService();
 				
-				// Save call to history
+				// Stop recording if active and get filename (must be done before saving history)
+				let recordingFilename = null;
+				if (isRecording) {
+					recordingFilename = await stopRecording();
+				}
+				
+				// Save call to history (with recording filename if available)
 				try {
 					if (__callDirection === "outgoing") {
 						const num = __originalCallNumber || "Unknown";
@@ -2089,6 +2534,7 @@
 							"outgoing",
 							num,
 							"Connected",
+							recordingFilename
 						);
 					} else if (__callDirection === "incoming") {
 						const num =
@@ -2099,6 +2545,7 @@
 							"incoming",
 							num,
 							"Connected",
+							recordingFilename
 						);
 					}
 				} catch (e) {
@@ -2122,6 +2569,7 @@
 				if (showDialpadBtn) {
 					showDialpadBtn.style.display = "none";
 				}
+
 
 				// Handle Bluetooth audio disconnect
 				handleBluetoothDisconnect();
@@ -2312,8 +2760,15 @@
 				document
 					.querySelectorAll(".header-toggle")
 					.forEach((btn) => btn.classList.remove("active"));
+				const titleMap = {
+					phone: "Phone",
+					contacts: "Contacts",
+					settings: "Settings",
+					log: "Event Log",
+					history: "Call History"
+				};
 				const activeBtn = document.querySelector(
-					`.header-toggle[title="${view === "phone" ? "Phone" : view === "contacts" ? "Contacts" : view === "settings" ? "Settings" : view === "log" ? "Event Log" : "Call History"}"]`,
+					`.header-toggle[title="${titleMap[view] || "Phone"}"]`,
 				);
 				if (activeBtn) activeBtn.classList.add("active");
 			}
@@ -2384,6 +2839,9 @@
 					const timestamp = new Date(item.timestamp).toLocaleString();
 					const safeNumber = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
 					
+					// Check if this call has a recording (stored directly in history entry)
+					const recordingFilename = item.recording || null;
+					
 					const historyDiv = document.createElement('div');
 					historyDiv.className = 'contact-item';
 					historyDiv.style.cssText = `
@@ -2395,6 +2853,22 @@
 					`;
 					
 					// Create the history display HTML
+					let recordingHTML = '';
+					if (recordingFilename) {
+						recordingHTML = `
+							<div style="margin-top: 8px; margin-left: 30px;">
+								<audio 
+									id="history-recording-${index}" 
+									controls 
+									style="width: 100%; max-width: 350px; height: 32px;"
+									preload="metadata"
+								>
+									Your browser does not support the audio element.
+								</audio>
+							</div>
+						`;
+					}
+					
 					const historyHTML = `
 						<div style="padding: 6px 0;">
 							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
@@ -2412,6 +2886,7 @@
 							<div style="font-size: 10px; color: #666; margin-left: 30px;">
 								${timestamp}
 							</div>
+							${recordingHTML}
 						</div>
 					`;
 					
@@ -2425,6 +2900,33 @@
 					});
 					
 					el.appendChild(historyDiv);
+					
+					// Load recording audio source if available
+					if (recordingFilename) {
+						setTimeout(async () => {
+							const audioEl = document.getElementById(`history-recording-${index}`);
+							if (audioEl) {
+								try {
+									if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+										window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+										try {
+											const CallService = window.Capacitor.Plugins.CallService;
+											const result = await CallService.getRecordingFileUrl({
+												filename: recordingFilename
+											});
+											if (result && result.url) {
+												audioEl.src = result.url;
+											}
+										} catch (error) {
+											console.error("Error getting recording URL:", error);
+										}
+									}
+								} catch (error) {
+									console.error("Error setting audio source:", error);
+								}
+							}
+						}, 100);
+					}
 				});
 			}
 
@@ -2432,6 +2934,65 @@
 				await Storage.clearHistory();
 				renderCallHistory();
 			}
+
+			async function clearRecordings() {
+				if (!confirm("Are you sure you want to delete all call recordings? This cannot be undone.")) {
+					return;
+				}
+
+				try {
+					// Get all recordings from metadata storage
+					const recordings = await Storage.getRecordings();
+					
+					// Get all history entries to find recording filenames
+					const history = await Storage.getHistory();
+					const historyRecordings = history
+						.filter(item => item.recording)
+						.map(item => item.recording);
+
+					// Combine all recording filenames (remove duplicates)
+					const allRecordings = [...new Set([...recordings.map(r => r.filename), ...historyRecordings])];
+
+					log(`Deleting ${allRecordings.length} recording files...`);
+
+					// Delete all recording files via native plugin
+					let deletedCount = 0;
+					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+						const CallService = window.Capacitor.Plugins.CallService;
+						for (const filename of allRecordings) {
+							try {
+								const result = await CallService.deleteRecordingFile({ filename });
+								if (result && result.success) {
+									deletedCount++;
+								}
+							} catch (error) {
+								console.error(`Failed to delete ${filename}:`, error);
+							}
+						}
+					}
+
+					// Clear recordings metadata storage
+					await Storage.clearRecordings();
+
+					// Remove recording field from all history entries
+					for (const item of history) {
+						if (item.recording) {
+							delete item.recording;
+						}
+					}
+					await localforage.setItem(Storage.HISTORY_KEY, history);
+
+					log(`Deleted ${deletedCount} recording files.`);
+					
+					// Refresh call history display
+					renderCallHistory();
+				} catch (error) {
+					log(`Failed to clear recordings: ${error.message}`);
+					console.error("Clear recordings error:", error);
+				}
+			}
+
 
 			// Contact management functions
 			let contactsList = [];
@@ -3422,6 +3983,7 @@
 					"saveCredentials",
 					"registerOnStartup",
 					"hideEventLog",
+					"enableCallRecording",
 				].forEach((id) => {
 					const el = document.getElementById(id);
 					if (el) {
