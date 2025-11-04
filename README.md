@@ -35,12 +35,14 @@ A mobile WebRTC SIP phone built with Capacitor for VoiceTel communications (Andr
 - **Tabbed Mobile UI**
   - 📞 Phone - Dialer and active call screen
   - 👥 Contacts - Device contacts integration (permission required)
-  - 🕘 History - Recent calls list
+  - 🕘 History - Recent calls list with integrated recording playback
   - 📋 Log - Real-time SIP message log
-  - ⚙️ Settings - SIP configuration and credentials
+  - ⚙️ Settings - SIP configuration, credentials, and call recording options
 - **Visual Call Indicators** - Ringing status and call duration display
 
 ### 🔧 Advanced Features
+- **Call Recording** - Automatic recording of calls when enabled (starts when call is answered, not during ringing)
+- **Recording Playback** - Play recordings directly from call history with integrated audio player
 - **Caller ID Customization** - Set custom display name and 10-digit North American caller ID
 - **Smart Number Handling** - Accepts any format, automatically cleans to digits
 - **Auto-Rejection** - Busy signal for incoming calls when already on a call
