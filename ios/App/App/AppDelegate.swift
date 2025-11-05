@@ -1,9 +1,10 @@
 import UIKit
 import Capacitor
 import AVFoundation
+import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window: UIWindow?
 
@@ -20,7 +21,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch {
             print("AVAudioSession setup failed: \(error)")
         }
+
+		// Configure notifications for incoming call actions
+		let center = UNUserNotificationCenter.current()
+		center.delegate = self
+		let answer = UNNotificationAction(identifier: "ANSWER_CALL", title: "Answer", options: [.foreground])
+		let decline = UNNotificationAction(identifier: "DECLINE_CALL", title: "Decline", options: [.destructive])
+		let category = UNNotificationCategory(identifier: "INCOMING_CALL", actions: [answer, decline], intentIdentifiers: [], options: [.customDismissAction])
+		center.setNotificationCategories([category])
+		center.requestAuthorization(options: [.alert, .badge, .sound, .criticalAlert]) { granted, error in
+			if let error = error {
+				print("Notification authorization error: \(error)")
+			} else {
+				print("Notification authorization granted: \(granted)")
+			}
+        }
         return true
+    }
+
+	// Handle notification action taps (Answer/Decline)
+	func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+		let action = response.actionIdentifier
+		if action == "ANSWER_CALL" || action == "DECLINE_CALL" {
+			DispatchQueue.main.async {
+				if let vc = self.window?.rootViewController as? CAPBridgeViewController {
+					let js = "if (typeof window !== 'undefined' && typeof window.handleNotificationAction === 'function') { window.handleNotificationAction('" + action + "', null); } else { console.log('handleNotificationAction not available, action: ' + '" + action + "'); }"
+					vc.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+				}
+			}
+		}
+		completionHandler()
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

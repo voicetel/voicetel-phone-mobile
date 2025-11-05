@@ -985,8 +985,8 @@
 			</div>
 
 			<div class="audio-container">
-				<audio id="remoteAudio" autoplay></audio>
-				<audio id="localAudio" autoplay muted></audio>
+				<audio id="remoteAudio" autoplay playsinline webkit-playsinline="true"></audio>
+				<audio id="localAudio" autoplay muted playsinline webkit-playsinline="true"></audio>
 			</div>
 		</div>
 
@@ -1266,6 +1266,14 @@
 			function createRingingTone() {
 				const audioContext = new (window.AudioContext ||
 					window.webkitAudioContext)();
+				
+				// iOS: Resume AudioContext if suspended (required for iOS)
+				if (audioContext.state === 'suspended') {
+					audioContext.resume().catch(err => {
+						console.error('Failed to resume AudioContext:', err);
+					});
+				}
+				
 				const oscillator1 = audioContext.createOscillator();
 				const oscillator2 = audioContext.createOscillator();
 				const gainNode = audioContext.createGain();
@@ -2156,11 +2164,17 @@
 			}
 
 
-			async function startRecording() {
-				if (isRecording) {
-					log("Recording already in progress");
-					return;
-				}
+		/**
+		 * Start call recording using MediaRecorder API
+		 * - iOS: Uses audio/mp4 (M4A) format with AAC codec for native compatibility
+		 * - Android: Falls back to audio/webm with opus codec
+		 * - Recordings are saved to native filesystem via Capacitor plugins
+		 */
+		async function startRecording() {
+			if (isRecording) {
+				log("Recording already in progress");
+				return;
+			}
 
 				// Check if recording is enabled in settings
 				const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
@@ -2236,16 +2250,28 @@
 					}
 
 					// Find supported MIME type
-					// Note: MP3 is not supported by MediaRecorder API directly
-					// Options are checked in order of preference
-					const options = [
-						'audio/webm;codecs=opus',  // Best quality, widely supported
-						'audio/webm',              // WebM fallback
-						'audio/ogg;codecs=opus',   // OGG/Opus
-						'audio/mp4',               // MP4/AAC
-						'audio/mpeg',              // MP3 (unlikely to be supported)
-						'audio/wav'                // WAV (unlikely to be supported)
-					];
+					// Prefer M4A (MP4/AAC) on iOS; WebM on other platforms
+					const isIOS = (window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'ios') ||
+						/\(iPad|iPhone|iPod\)/.test(navigator.userAgent);
+					const options = isIOS
+						? [
+							'audio/mp4;codecs=mp4a.40.2', // M4A/AAC
+							'audio/mp4',
+							'audio/aac',
+							'audio/webm;codecs=opus',
+							'audio/webm',
+							'audio/ogg;codecs=opus',
+							'audio/wav'
+						]
+						: [
+							'audio/webm;codecs=opus',
+							'audio/webm',
+							'audio/ogg;codecs=opus',
+							'audio/mp4;codecs=mp4a.40.2',
+							'audio/mp4',
+							'audio/mpeg',
+							'audio/wav'
+						];
 					
 					log("Checking supported audio formats...");
 					let mimeType = null;
@@ -2258,8 +2284,8 @@
 					}
 					
 					if (!mimeType) {
-						// Fallback to default
-						mimeType = 'audio/webm';
+						// Fallback to platform-default
+						mimeType = isIOS ? 'audio/mp4' : 'audio/webm';
 						log(`No preferred format supported, using default: ${mimeType}`);
 					} else {
 						log(`Selected MIME type: ${mimeType}`);
@@ -2403,11 +2429,18 @@
 						return `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mediaRecorder.mimeType)}`;
 					})();
 
-					// Save via native plugin if available
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+				// Save to native platform
+				const isNative = window.Capacitor && 
+					((window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || 
+					 (window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'));
+				
+				if (isNative) {
+					const CallService = window.Capacitor.Plugins?.CallService;
+					const Filesystem = window.Capacitor.Plugins?.Filesystem;
+					
+					// Try native plugin first (saves to Application Support on iOS)
+					if (CallService?.saveRecording) {
 						try {
-							const CallService = window.Capacitor.Plugins.CallService;
 							await CallService.saveRecording({
 								filename: filename,
 								data: base64,
@@ -2415,11 +2448,7 @@
 							});
 							log(`Recording saved: ${filename}`);
 							
-							// Recording should already be linked to call history via addCallToHistory() in endCall()
-							// But update it just in case it wasn't linked (backward compatibility)
 							await Storage.updateCallHistoryWithRecording(filename);
-							
-							// Also store recording metadata separately (for backward compatibility)
 							await Storage.addRecordingToHistory({
 								filename: filename,
 								callerNumber: callerNumber,
@@ -2427,24 +2456,51 @@
 								timestamp: callTimestamp,
 								duration: getCallDuration()
 							});
+							return;
 						} catch (error) {
-							log(`Failed to save recording via plugin: ${error.message}`);
-							console.error("Save recording error:", error);
-							// Fallback: try to download
-							downloadRecording(blob, filename);
+							console.error("Native plugin save failed:", error);
 						}
-					} else {
-						// Fallback: download file (for web)
-						downloadRecording(blob, filename);
 					}
+					
+					// Fallback to Filesystem plugin (saves to Documents on iOS)
+					if (Filesystem?.writeFile) {
+						try {
+							await Filesystem.mkdir({ 
+								path: 'CallRecordings', 
+								directory: 'DATA', 
+								recursive: true 
+							}).catch(() => {});
+							
+							// Write base64 data (Capacitor auto-decodes to binary)
+							await Filesystem.writeFile({
+								path: `CallRecordings/${filename}`,
+								data: base64,
+								directory: 'DATA'
+							});
+							
+							log(`Recording saved: ${filename}`);
+							await Storage.updateCallHistoryWithRecording(filename);
+							await Storage.addRecordingToHistory({
+								filename: filename,
+								callerNumber: callerNumber,
+								direction: recordingCallDirection || "unknown",
+								timestamp: callTimestamp,
+								duration: getCallDuration()
+							});
+							return;
+						} catch (error) {
+							console.error('Filesystem save failed:', error);
+						}
+					}
+				}
 
-					// Clear recorded chunks
-					recordedChunks = [];
-					mediaRecorder = null;
-
+				// Web fallback: download file
+				downloadRecording(blob, filename);
 				} catch (error) {
 					log(`Failed to save recording: ${error.message}`);
-					console.error("Save recording error:", error);
+					console.error("Recording stop error:", error);
+					isRecording = false;
+					currentRecordingFilename = null;
 				}
 			}
 
@@ -2464,6 +2520,7 @@
 				if (mimeType.includes('webm')) return 'webm';
 				if (mimeType.includes('ogg')) return 'ogg';
 				if (mimeType.includes('mp4')) return 'm4a';  // MP4 audio is typically M4A
+				if (mimeType.includes('aac')) return 'm4a';  // Prefer .m4a container naming for AAC
 				if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3';
 				if (mimeType.includes('wav')) return 'wav';
 				return 'webm';
@@ -2864,6 +2921,8 @@
 								<audio 
 									id="history-recording-${index}" 
 									controls 
+									playsinline
+									webkit-playsinline="true"
 									style="width: 100%; max-width: 350px; height: 32px;"
 									preload="metadata"
 								>
@@ -2909,25 +2968,56 @@
 					if (recordingFilename) {
 						setTimeout(async () => {
 							const audioEl = document.getElementById(`history-recording-${index}`);
-							if (audioEl) {
-								try {
-									if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-										window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-										try {
-											const CallService = window.Capacitor.Plugins.CallService;
-											const result = await CallService.getRecordingFileUrl({
-												filename: recordingFilename
-											});
-											if (result && result.url) {
-												audioEl.src = result.url;
-											}
-										} catch (error) {
-											console.error("Error getting recording URL:", error);
-										}
-									}
-								} catch (error) {
-									console.error("Error setting audio source:", error);
+							if (!audioEl || audioEl.__vtLoaded) return;
+							audioEl.__vtLoaded = true;
+							
+							try {
+								if (!window.Capacitor?.Plugins?.Filesystem) {
+									console.error('Capacitor Filesystem plugin not available');
+									return;
 								}
+								
+								const Filesystem = window.Capacitor.Plugins.Filesystem;
+								
+								// Get file URI and convert to WebView-compatible URL
+								const { uri } = await Filesystem.getUri({
+									path: `CallRecordings/${recordingFilename}`,
+									directory: 'DATA'
+								});
+								
+								if (!uri || !window.Capacitor.convertFileSrc) {
+									throw new Error('Failed to get file URI or convertFileSrc unavailable');
+								}
+								
+								const fileUrl = window.Capacitor.convertFileSrc(uri);
+								
+								// Set iOS-specific attributes for inline playback
+								audioEl.setAttribute('playsinline', 'true');
+								audioEl.setAttribute('webkit-playsinline', 'true');
+								
+								// Load audio file
+								audioEl.src = fileUrl;
+								audioEl.load();
+								
+								// Error handler
+								audioEl.onerror = function() {
+									const err = audioEl.error;
+									const errorCodes = {
+										1: 'MEDIA_ERR_ABORTED',
+										2: 'MEDIA_ERR_NETWORK',
+										3: 'MEDIA_ERR_DECODE',
+										4: 'MEDIA_ERR_SRC_NOT_SUPPORTED'
+									};
+									console.error('Audio playback error:', {
+										code: err?.code || 0,
+										message: errorCodes[err?.code] || 'Unknown',
+										file: recordingFilename
+									});
+								};
+								
+							} catch (error) {
+								console.error('Failed to load recording:', error);
+								audioEl.__vtLoaded = false;
 							}
 						}, 100);
 					}
@@ -3403,6 +3493,22 @@
 			// Re-registration function with debouncing
 			async function reRegister() {
 				log('=== RE-REGISTER FUNCTION CALLED ===');
+				// iOS: never auto re-register; avoid closing WebSocket mid-call
+				try {
+					if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
+						const platform = window.Capacitor.getPlatform();
+						if (platform === 'ios') {
+							log('RE-REGISTER: Disabled on iOS');
+							return;
+						}
+					}
+				} catch (_) {}
+
+				// If there is a pending incoming session, never re-register
+				if (incomingSession) {
+					log('RE-REGISTER: Incoming session pending - skipping');
+					return;
+				}
 				
 				// CRITICAL: Do not re-register if there's an active call!
 				// First check: If we just returned from notification tap, skip re-registration
