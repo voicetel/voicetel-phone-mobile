@@ -105,3 +105,7 @@ ios/App/build_device/
 # Optional: transient Xcode outputs (safe to ignore if present)
 ios/App/build/**/Intermediates.noindex/
 ios/App/build/**/Products/
+
+# Android build artifacts
+.gradle/
+plugins/**/.gradle/
