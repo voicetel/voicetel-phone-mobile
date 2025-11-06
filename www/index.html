@@ -2964,32 +2964,63 @@
 					
 					el.appendChild(historyDiv);
 					
-					// Load recording audio source if available
-					if (recordingFilename) {
-						setTimeout(async () => {
-							const audioEl = document.getElementById(`history-recording-${index}`);
-							if (audioEl) {
-								try {
-									if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-										window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-										try {
-											const CallService = window.Capacitor.Plugins.CallService;
-											const result = await CallService.getRecordingFileUrl({
-												filename: recordingFilename
-											});
-											if (result && result.url) {
-												audioEl.src = result.url;
-											}
-										} catch (error) {
-											console.error("Error getting recording URL:", error);
+				// Load recording audio source if available
+				if (recordingFilename) {
+					setTimeout(async () => {
+						const audioEl = document.getElementById(`history-recording-${index}`);
+						if (!audioEl) return;
+						
+						try {
+							if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+								const platform = window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'unknown';
+								
+								if (platform === 'ios') {
+									// iOS: Use Filesystem plugin (CallService not available on iOS)
+									const { Filesystem } = window.Capacitor.Plugins;
+									const result = await Filesystem.readFile({
+										path: `CallRecordings/${recordingFilename}`,
+										directory: 'DATA'
+									});
+									
+									if (result && result.data) {
+										// Convert base64 to Blob URL for proper audio duration detection
+										const byteCharacters = atob(result.data);
+										const byteNumbers = new Array(byteCharacters.length);
+										for (let i = 0; i < byteCharacters.length; i++) {
+											byteNumbers[i] = byteCharacters.charCodeAt(i);
 										}
+										const byteArray = new Uint8Array(byteNumbers);
+										const blob = new Blob([byteArray], { type: 'audio/mp4' });
+										const blobUrl = URL.createObjectURL(blob);
+										
+										// Clean up old blob URL
+										if (audioEl._oldBlobUrl) {
+											URL.revokeObjectURL(audioEl._oldBlobUrl);
+										}
+										audioEl._oldBlobUrl = blobUrl;
+										audioEl.src = blobUrl;
+										
+										audioEl.addEventListener('error', (e) => {
+											console.error('iOS recording playback error:', audioEl.error);
+										}, { once: true });
 									}
-								} catch (error) {
-									console.error("Error setting audio source:", error);
+								} else {
+									// Android: Use CallService plugin
+									const { CallService } = window.Capacitor.Plugins;
+									const result = await CallService.getRecordingFileUrl({
+										filename: recordingFilename
+									});
+									
+									if (result && result.url) {
+										audioEl.src = result.url;
+									}
 								}
 							}
-						}, 100);
-					}
+						} catch (error) {
+							console.error("Error loading recording:", error);
+						}
+					}, 100);
+				}
 				});
 			}
 
