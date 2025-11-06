@@ -2968,56 +2968,25 @@
 					if (recordingFilename) {
 						setTimeout(async () => {
 							const audioEl = document.getElementById(`history-recording-${index}`);
-							if (!audioEl || audioEl.__vtLoaded) return;
-							audioEl.__vtLoaded = true;
-							
-							try {
-								if (!window.Capacitor?.Plugins?.Filesystem) {
-									console.error('Capacitor Filesystem plugin not available');
-									return;
+							if (audioEl) {
+								try {
+									if (window.Capacitor && window.Capacitor.isNativePlatform() && 
+										window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+										try {
+											const CallService = window.Capacitor.Plugins.CallService;
+											const result = await CallService.getRecordingFileUrl({
+												filename: recordingFilename
+											});
+											if (result && result.url) {
+												audioEl.src = result.url;
+											}
+										} catch (error) {
+											console.error("Error getting recording URL:", error);
+										}
+									}
+								} catch (error) {
+									console.error("Error setting audio source:", error);
 								}
-								
-								const Filesystem = window.Capacitor.Plugins.Filesystem;
-								
-								// Get file URI and convert to WebView-compatible URL
-								const { uri } = await Filesystem.getUri({
-									path: `CallRecordings/${recordingFilename}`,
-									directory: 'DATA'
-								});
-								
-								if (!uri || !window.Capacitor.convertFileSrc) {
-									throw new Error('Failed to get file URI or convertFileSrc unavailable');
-								}
-								
-								const fileUrl = window.Capacitor.convertFileSrc(uri);
-								
-								// Set iOS-specific attributes for inline playback
-								audioEl.setAttribute('playsinline', 'true');
-								audioEl.setAttribute('webkit-playsinline', 'true');
-								
-								// Load audio file
-								audioEl.src = fileUrl;
-								audioEl.load();
-								
-								// Error handler
-								audioEl.onerror = function() {
-									const err = audioEl.error;
-									const errorCodes = {
-										1: 'MEDIA_ERR_ABORTED',
-										2: 'MEDIA_ERR_NETWORK',
-										3: 'MEDIA_ERR_DECODE',
-										4: 'MEDIA_ERR_SRC_NOT_SUPPORTED'
-									};
-									console.error('Audio playback error:', {
-										code: err?.code || 0,
-										message: errorCodes[err?.code] || 'Unknown',
-										file: recordingFilename
-									});
-								};
-								
-							} catch (error) {
-								console.error('Failed to load recording:', error);
-								audioEl.__vtLoaded = false;
 							}
 						}, 100);
 					}
