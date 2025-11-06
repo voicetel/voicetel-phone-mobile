@@ -106,10 +106,16 @@
 
 			.content {
 				padding: 30px;
+				overflow-x: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			.section {
 				margin-bottom: 25px;
+				overflow-x: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			.section.config-section {
@@ -149,6 +155,27 @@
 				max-height: 400px;
 				border-radius: 12px;
 				overflow-y: auto;
+			}
+
+			.history-actions,
+			.contacts-actions {
+				display: flex;
+				gap: 10px;
+				margin-top: 12px;
+				padding: 0;
+				width: calc(100% - 40px);
+				margin-left: 20px;
+				margin-right: 20px;
+				box-sizing: border-box;
+				overflow-x: hidden;
+				flex-wrap: wrap;
+			}
+
+			.history-actions button,
+			.contacts-actions button {
+				flex: 1 1 auto;
+				min-width: 0;
+				max-width: 100%;
 			}
 
 			#contactsSection .log {
@@ -247,6 +274,9 @@
 				display: flex;
 				gap: 10px;
 				margin-top: 15px;
+				overflow-x: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			button {
@@ -312,6 +342,9 @@
 				background: #f8f8f8;
 				border-radius: 12px;
 				margin-top: 20px;
+				overflow-x: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			.call-controls.active {
@@ -322,6 +355,8 @@
 				font-size: 16px;
 				color: #666;
 				margin-bottom: 15px;
+				overflow-x: hidden;
+				word-wrap: break-word;
 			}
 
 			.dialpad {
@@ -353,6 +388,9 @@
 				margin: 20px 0;
 				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 				display: block;
+				overflow-x: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			.show-dialpad-button {
@@ -370,6 +408,10 @@
 				font-size: 18px;
 				margin-bottom: 10px;
 				font-family: monospace;
+				width: 100%;
+				max-width: 100%;
+				box-sizing: border-box;
+				overflow-x: hidden;
 			}
 
 			.log {
@@ -402,6 +444,9 @@
 				border-radius: 12px;
 				margin-bottom: 20px;
 				animation: pulse 1.5s infinite;
+				overflow-x: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			.incoming-call.active {
@@ -964,7 +1009,7 @@
 							</p>
 						</div>
 					</div>
-					<div class="contacts-actions" style="display: flex; gap: 10px; margin-top: 12px">
+					<div class="contacts-actions">
 						<button class="btn-secondary" onclick="loadContacts()">
 							🔄 Refresh
 						</button>
@@ -977,21 +1022,15 @@
 				<div class="section log-section" id="historySection">
 					<h2>Call History</h2>
 					<div id="callHistory" class="log"></div>
-					<div
-						class="history-actions"
-						style="display: flex; gap: 10px; margin-top: 12px"
-					>
+					<div class="history-actions">
+						<button class="btn-secondary" onclick="renderCallHistory()">
+							🔄 Refresh
+						</button>
 						<button class="btn-secondary" onclick="clearHistory()">
-							Clear History
+							🗑️ Clear History
 						</button>
 						<button class="btn-secondary" onclick="clearRecordings()">
-							Clear Recordings
-						</button>
-						<button
-							class="btn-secondary"
-							onclick="renderCallHistory()"
-						>
-							Refresh
+							🎙️ Clear Recordings
 						</button>
 					</div>
 				</div>
