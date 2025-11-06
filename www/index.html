@@ -2,8 +2,11 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-		<title>VoiceTel Phone v3.5.5</title>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+		/>
+		<title>VoiceTel Phone v3.5.6</title>
 		<link rel="icon" type="image/png" href="favicon.png" />
 
 		<style>
@@ -322,7 +325,8 @@
 			}
 
 			@keyframes pulse {
-				0%, 100% {
+				0%,
+				100% {
 					opacity: 1;
 				}
 				50% {
@@ -567,8 +571,8 @@
 			<div class="content">
 				<div class="section config-section" id="configSection">
 					<h2>Settings</h2>
-					
-					<div class="button-group" style="margin-bottom: 20px;">
+
+					<div class="button-group" style="margin-bottom: 20px">
 						<button
 							id="registerBtn"
 							class="btn-primary"
@@ -746,9 +750,11 @@
 								border-radius: 4px;
 							"
 						>
-							⚠️ <strong>Legal Notice:</strong> Only enable call recording where it is legally permitted. 
-							Recording calls without consent may violate privacy laws in your jurisdiction. 
-							Always inform all parties before recording.
+							⚠️ <strong>Legal Notice:</strong> Only enable call
+							recording where it is legally permitted. Recording
+							calls without consent may violate privacy laws in
+							your jurisdiction. Always inform all parties before
+							recording.
 						</div>
 
 						<label
@@ -790,7 +796,6 @@
 							Clear All Saved Data
 						</button>
 					</div>
-
 				</div>
 
 				<div class="section hideable" id="callSection">
@@ -881,17 +886,20 @@
 							>
 								📞 Call
 							</button>
-							<button class="btn-secondary" onclick="clearNumber()">
+							<button
+								class="btn-secondary"
+								onclick="clearNumber()"
+							>
 								Clear
 							</button>
 						</div>
 					</div>
 
 					<div id="callControls" class="call-controls">
-				<div class="call-info">
-					<div id="callStatus">Call in progress</div>
-					<div id="callDuration">00:00</div>
-				</div>
+						<div class="call-info">
+							<div id="callStatus">Call in progress</div>
+							<div id="callDuration">00:00</div>
+						</div>
 						<div id="ringingIndicator">🔔 Ringing...</div>
 						<div
 							class="button-group"
@@ -912,8 +920,15 @@
 								Hang Up
 							</button>
 						</div>
-						<div id="showDialpadBtn" class="show-dialpad-button" style="display: none;">
-							<button class="btn-secondary" onclick="showDialpad()">
+						<div
+							id="showDialpadBtn"
+							class="show-dialpad-button"
+							style="display: none"
+						>
+							<button
+								class="btn-secondary"
+								onclick="showDialpad()"
+							>
 								📱 Show Dialpad
 							</button>
 						</div>
@@ -934,7 +949,7 @@
 					>
 						WebSocket: Loading... | SIP Domain: Loading...
 					</div>
-					
+
 					<details
 						style="
 							margin-top: 15px;
@@ -988,23 +1003,42 @@
 
 				<div class="section log-section" id="contactsSection">
 					<h2>Contacts</h2>
-					<div class="contacts-search" style="margin-bottom: 15px;">
-						<input 
-							type="text" 
-							id="contactSearch" 
-							placeholder="🔍 Search contacts..." 
+					<div class="contacts-search" style="margin-bottom: 15px">
+						<input
+							type="text"
+							id="contactSearch"
+							placeholder="🔍 Search contacts..."
 							class="input-field"
-							style="width: 100%; padding: 12px 16px; border: 2px solid #e1e5e9; border-radius: 25px; font-size: 14px; background: #f8f9fa; transition: all 0.3s ease; outline: none;"
+							style="
+								width: 100%;
+								padding: 12px 16px;
+								border: 2px solid #e1e5e9;
+								border-radius: 25px;
+								font-size: 14px;
+								background: #f8f9fa;
+								transition: all 0.3s ease;
+								outline: none;
+							"
 							onfocus="this.style.borderColor='#007bff'; this.style.backgroundColor='white'; this.style.boxShadow='0 0 0 3px rgba(0,123,255,0.1)';"
 							onblur="this.style.borderColor='#e1e5e9'; this.style.backgroundColor='#f8f9fa'; this.style.boxShadow='none';"
 						/>
 					</div>
 					<div id="contactsList" class="log">
-						<div class="contact-item" style="text-align: center; padding: 20px; color: #666;">
-							<button class="btn-primary" onclick="loadContacts()">
+						<div
+							class="contact-item"
+							style="
+								text-align: center;
+								padding: 20px;
+								color: #666;
+							"
+						>
+							<button
+								class="btn-primary"
+								onclick="loadContacts()"
+							>
 								📱 Load Contacts
 							</button>
-							<p style="margin-top: 10px; font-size: 14px;">
+							<p style="margin-top: 10px; font-size: 14px">
 								Tap to load your device contacts
 							</p>
 						</div>
@@ -1023,18 +1057,23 @@
 					<h2>Call History</h2>
 					<div id="callHistory" class="log"></div>
 					<div class="history-actions">
-						<button class="btn-secondary" onclick="renderCallHistory()">
+						<button
+							class="btn-secondary"
+							onclick="renderCallHistory()"
+						>
 							🔄 Refresh
 						</button>
 						<button class="btn-secondary" onclick="clearHistory()">
 							🗑️ Clear History
 						</button>
-						<button class="btn-secondary" onclick="clearRecordings()">
+						<button
+							class="btn-secondary"
+							onclick="clearRecordings()"
+						>
 							🎙️ Clear Recordings
 						</button>
 					</div>
 				</div>
-
 			</div>
 
 			<div class="audio-container">
@@ -1056,11 +1095,12 @@
 			const INCOMING_CALL_TIMEOUT_MS = 30000;
 			const DTMF_DURATION_MS = 250;
 			const DTMF_INTERTONE_GAP_MS = 100;
-			const SIP_REGISTRATION_EXPIRES_SEC = 300;
+			const SIP_REGISTRATION_EXPIRES_SEC = 180;
 			const USERNAME_LENGTH = 10;
-			const APP_VERSION = window.VOICETEL_VERSION || "3.5.5";
+			const APP_VERSION = window.VOICETEL_VERSION || "3.5.6";
 			const SIP_DOMAIN = window.VOICETEL_SIP_DOMAIN || "tls.voicetel.com";
-			const SIP_SERVER = window.VOICETEL_SIP_SERVER || "wss://tls.voicetel.com:443";
+			const SIP_SERVER =
+				window.VOICETEL_SIP_SERVER || "wss://tls.voicetel.com:443";
 
 			// Configure localforage
 			localforage.config({
@@ -1096,8 +1136,9 @@
 									.checked,
 							hideEventLog:
 								document.getElementById("hideEventLog").checked,
-							enableCallRecording:
-								document.getElementById("enableCallRecording").checked,
+							enableCallRecording: document.getElementById(
+								"enableCallRecording",
+							).checked,
 							saveCredentials: true,
 						};
 
@@ -1152,8 +1193,14 @@
 							config.saveCredentials || false;
 
 						log("Configuration loaded from local storage");
-						console.log("hideEventLog setting loaded:", config.hideEventLog);
-						console.log("hideEventLog checkbox checked:", document.getElementById("hideEventLog").checked);
+						console.log(
+							"hideEventLog setting loaded:",
+							config.hideEventLog,
+						);
+						console.log(
+							"hideEventLog checkbox checked:",
+							document.getElementById("hideEventLog").checked,
+						);
 
 						// Update event log visibility based on setting
 						updateEventLogVisibility();
@@ -1180,7 +1227,12 @@
 					log("All saved data cleared");
 				},
 
-				async addCallToHistory(type, number, duration, recording = null) {
+				async addCallToHistory(
+					type,
+					number,
+					duration,
+					recording = null,
+				) {
 					try {
 						const history =
 							(await localforage.getItem(this.HISTORY_KEY)) || [];
@@ -1209,11 +1261,17 @@
 						// Find the most recent call entry (first in array) and add recording filename
 						if (history.length > 0 && !history[0].recording) {
 							history[0].recording = filename;
-							await localforage.setItem(this.HISTORY_KEY, history);
+							await localforage.setItem(
+								this.HISTORY_KEY,
+								history,
+							);
 							log(`Recording ${filename} linked to call history`);
 						}
 					} catch (e) {
-						console.error("Failed to update call history with recording:", e);
+						console.error(
+							"Failed to update call history with recording:",
+							e,
+						);
 					}
 				},
 
@@ -1228,14 +1286,15 @@
 				async addRecordingToHistory(recording) {
 					try {
 						const RECORDINGS_KEY = "voicetel_recordings";
-						const recordings = (await localforage.getItem(RECORDINGS_KEY)) || [];
+						const recordings =
+							(await localforage.getItem(RECORDINGS_KEY)) || [];
 						recordings.unshift(recording);
-						
+
 						// Keep last 50 recordings
 						if (recordings.length > 50) {
 							recordings.length = 50;
 						}
-						
+
 						await localforage.setItem(RECORDINGS_KEY, recordings);
 					} catch (e) {
 						console.error("Recording metadata save failed:", e);
@@ -1264,7 +1323,8 @@
 			let callTimer = null;
 			let callStartTime = null;
 			let ringingAudio = null;
-			let isRegistering = false; // Lock to prevent multiple registrations
+			let registrationPromise = null; // Single registration promise to prevent concurrent registrations
+			let unregistrationPromise = null; // Track unregistration in progress
 			let reRegisterTimeout = null; // Debounce re-registration
 			let activeCall = false; // Global flag to track if there's an active call
 			let isRecording = false;
@@ -1277,11 +1337,11 @@
 			let recordingCallerNumber = null; // Store caller number for recording metadata
 			let recordingCallDirection = null; // Store call direction for recording metadata
 			let currentRecordingFilename = null; // Store filename for linking to call history
-			
+
 			// Bluetooth audio management
 			let bluetoothAudioContext = null;
 			let bluetoothAudioGain = null;
-			
+
 			// Event listener cleanup tracking
 			let activeEventListeners = new Set();
 			let webSocketMessageHandler = null;
@@ -1319,14 +1379,14 @@
 			function createRingingTone() {
 				const audioContext = new (window.AudioContext ||
 					window.webkitAudioContext)();
-				
+
 				// iOS: Resume AudioContext if suspended (required for iOS)
-				if (audioContext.state === 'suspended') {
-					audioContext.resume().catch(err => {
-						console.error('Failed to resume AudioContext:', err);
+				if (audioContext.state === "suspended") {
+					audioContext.resume().catch((err) => {
+						console.error("Failed to resume AudioContext:", err);
 					});
 				}
-				
+
 				const oscillator1 = audioContext.createOscillator();
 				const oscillator2 = audioContext.createOscillator();
 				const gainNode = audioContext.createGain();
@@ -1401,7 +1461,7 @@
 			function log(message) {
 				// Log to console for logcat capture
 				console.log(message);
-				
+
 				const logDiv = document.getElementById("log");
 				const entry = document.createElement("div");
 				entry.className = "log-entry";
@@ -1434,12 +1494,27 @@
 					return;
 				}
 
-				// Atomic check and set to prevent race conditions
-				if (isRegistering) {
-					log("Registration already in progress - ignoring duplicate request");
-					return;
+				// If registration is already in progress, return the existing promise
+				if (registrationPromise) {
+					log(
+						"Registration already in progress - waiting for completion",
+					);
+					return registrationPromise;
 				}
-				isRegistering = true; // Set lock immediately
+
+				// If currently unregistering, wait for it to complete first
+				if (unregistrationPromise) {
+					log(
+						"Unregistration in progress - waiting for completion before registering",
+					);
+					try {
+						await unregistrationPromise;
+					} catch (error) {
+						log(
+							`Error waiting for unregistration: ${error.message}`,
+						);
+					}
+				}
 
 				const server = document.getElementById("sipServer").value;
 				const username = document.getElementById("username").value;
@@ -1450,21 +1525,20 @@
 
 				if (!server || !username || !password) {
 					alert("Please fill in all required fields");
-					isRegistering = false; // Reset lock on early return
-					return;
+					return Promise.reject(new Error("Missing required fields"));
 				}
 
 				if (!isValidUsername(username)) {
 					alert("Username must be exactly 10 numeric digits");
 					document.getElementById("usernameError").style.display =
 						"block";
-					isRegistering = false; // Reset lock on early return
-					return;
+					return Promise.reject(new Error("Invalid username"));
 				}
 
-				registeredUsername = username;
+				// Create and store the registration promise
+				registrationPromise = new Promise((resolve, reject) => {
+					registeredUsername = username;
 
-				try {
 					log("Starting registration...");
 					log(`Connecting to VoiceTel server (${SIP_DOMAIN})...`);
 
@@ -1473,8 +1547,8 @@
 					const transportOptions = {
 						wsServers: [server],
 						traceSip: true,
-						wsServerMaxReconnectionAttempts: 0, // Disable automatic reconnection
-						wsServerReconnectionTimeout: 0, // No timeout
+						wsServerMaxReconnectionAttempts: 0,
+						wsServerReconnectionTimeout: 0,
 					};
 
 					const userAgentOptions = {
@@ -1482,11 +1556,11 @@
 						transportOptions: transportOptions,
 						authorizationUser: username,
 						password: password,
-							displayName: displayName,
-							userAgentString: `VoiceTel/${APP_VERSION}`,
-						register: true, // Keep automatic registration
+						displayName: displayName,
+						userAgentString: `VoiceTel/${APP_VERSION}`,
+						register: true,
 						registerOptions: {
-								registrar: `sip:${SIP_DOMAIN}`,
+							registrar: `sip:${SIP_DOMAIN}`,
 							expires: SIP_REGISTRATION_EXPIRES_SEC,
 						},
 						sessionDescriptionHandlerFactoryOptions: {
@@ -1512,109 +1586,198 @@
 						dtmfType: "rtp",
 					};
 
-					userAgent = new SIP.UA(userAgentOptions);
+					try {
+						userAgent = new SIP.UA(userAgentOptions);
 
-					userAgent.on("registered", () => {
-						isRegistered = true;
-						isRegistering = false; // Reset lock on successful registration
-						updateStatus("Registered", true);
-						log("Successfully registered");
-						log("SIP/2.0 200 OK");
+						// Set up one-time event handlers for this registration attempt
+						const onRegistered = () => {
+							isRegistered = true;
+							registrationPromise = null; // Clear promise on success
+							updateStatus("Registered", true);
+							log("Successfully registered");
+							log("SIP/2.0 200 OK");
 
-						document.getElementById("registerBtn").disabled = true;
-						document.getElementById("unregisterBtn").disabled =
-							false;
-						document.getElementById("callBtn").disabled = false;
+							document.getElementById("registerBtn").disabled =
+								true;
+							document.getElementById("unregisterBtn").disabled =
+								false;
+							document.getElementById("callBtn").disabled = false;
 
-						if (
-							"Notification" in window &&
-							Notification.permission === "default"
-						) {
-							Notification.requestPermission().then(
-								(permission) => {
-									if (permission === "granted") {
-										log(
-											"Desktop notifications enabled for incoming calls",
-										);
-									}
-								},
+							if (
+								"Notification" in window &&
+								Notification.permission === "default"
+							) {
+								Notification.requestPermission().then(
+									(permission) => {
+										if (permission === "granted") {
+											log(
+												"Desktop notifications enabled for incoming calls",
+											);
+										}
+									},
+								);
+							}
+
+							// Remove one-time handlers
+							userAgent.off("registered", onRegistered);
+							userAgent.off(
+								"registrationFailed",
+								onRegistrationFailed,
 							);
-						}
-					});
 
-					userAgent.on("registrationFailed", (response, cause) => {
-						if (
-							response &&
-							response.status_code &&
-							response.reason_phrase
-						) {
-					log(
-						`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-					);
-						}
-						log(`Registration failed: ${cause}`);
+							resolve();
+						};
+
+						const onRegistrationFailed = (response, cause) => {
+							registrationPromise = null; // Clear promise on failure
+							isRegistered = false;
+
+							if (
+								response &&
+								response.status_code &&
+								response.reason_phrase
+							) {
+								log(
+									`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+								);
+							}
+							log(`Registration failed: ${cause}`);
+							updateStatus("Registration Failed");
+
+							// Remove one-time handlers
+							userAgent.off("registered", onRegistered);
+							userAgent.off(
+								"registrationFailed",
+								onRegistrationFailed,
+							);
+
+							// Clean up userAgent on failure
+							if (userAgent) {
+								try {
+									userAgent.stop();
+								} catch (e) {
+									log(
+										`Error stopping userAgent: ${e.message}`,
+									);
+								}
+								userAgent = null;
+							}
+
+							reject(new Error(`Registration failed: ${cause}`));
+						};
+
+						// Attach one-time handlers
+						userAgent.once("registered", onRegistered);
+						userAgent.once(
+							"registrationFailed",
+							onRegistrationFailed,
+						);
+
+						// Set up persistent event handlers (not one-time)
+						userAgent.on("unregistered", () => {
+							log("SIP/2.0 200 OK (Unregistered)");
+						});
+
+						userAgent.on("invite", (session) => {
+							const callerInfo =
+								session.remoteIdentity.displayName ||
+								session.remoteIdentity.uri.user;
+							log(`Incoming call from ${callerInfo}`);
+
+							if (
+								"Notification" in window &&
+								Notification.permission === "granted"
+							) {
+								new Notification("VoiceTel Phone", {
+									body: `Incoming call from ${callerInfo}`,
+									icon: "📞",
+									requireInteraction: true,
+								});
+							}
+
+							handleIncomingCall(session);
+						});
+
+						userAgent.start();
+					} catch (error) {
+						registrationPromise = null; // Clear promise on error
+						log(`Registration failed: ${error.message}`);
 						updateStatus("Registration Failed");
-					});
+						console.error(error);
+						reject(error);
+					}
+				});
 
-					userAgent.on("unregistered", () => {
-						log("SIP/2.0 200 OK (Unregistered)");
-					});
-
-					userAgent.on("invite", (session) => {
-						const callerInfo =
-							session.remoteIdentity.displayName ||
-							session.remoteIdentity.uri.user;
-						log(`Incoming call from ${callerInfo}`);
-
-						if (
-							"Notification" in window &&
-							Notification.permission === "granted"
-						) {
-							new Notification("VoiceTel Phone", {
-								body: `Incoming call from ${callerInfo}`,
-								icon: "📞",
-								requireInteraction: true,
-							});
-						}
-
-						handleIncomingCall(session);
-					});
-
-					userAgent.start();
-				} catch (error) {
-					log(`Registration failed: ${error.message}`);
-					updateStatus("Registration Failed");
-					console.error(error);
-					isRegistering = false; // Reset lock on error
-				}
+				return registrationPromise;
 			}
 
-			function unregister() {
-				try {
-					// Clean up WebSocket event listeners
-					if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-						userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
-						webSocketMessageHandler = null;
-					}
-					
-					if (userAgent) {
-						userAgent.unregister();
-						userAgent.stop();
-						userAgent = null;
-					}
-
-					isRegistered = false;
-					registeredUsername = null;
-					updateStatus("Disconnected");
-					log("Unregistered successfully");
-
-					document.getElementById("registerBtn").disabled = false;
-					document.getElementById("unregisterBtn").disabled = true;
-					document.getElementById("callBtn").disabled = true;
-				} catch (error) {
-					log(`Unregister failed: ${error.message}`);
-					console.error(error);
+			async function unregister() {
+				// If unregistration already in progress, return the existing promise
+				if (unregistrationPromise) {
+					log(
+						"Unregistration already in progress - waiting for completion",
+					);
+					return unregistrationPromise;
 				}
+
+				// If registration is in progress, wait for it to complete first
+				if (registrationPromise) {
+					log(
+						"Registration in progress - waiting for completion before unregistering",
+					);
+					try {
+						await registrationPromise;
+					} catch (error) {
+						// Continue with unregistration even if registration failed
+						log(
+							`Registration completed with error: ${error.message}`,
+						);
+					}
+				}
+
+				unregistrationPromise = new Promise((resolve, reject) => {
+					try {
+						// Clean up WebSocket event listeners
+						if (
+							userAgent &&
+							userAgent.transport &&
+							userAgent.transport.ws &&
+							webSocketMessageHandler
+						) {
+							userAgent.transport.ws.removeEventListener(
+								"message",
+								webSocketMessageHandler,
+							);
+							webSocketMessageHandler = null;
+						}
+
+						if (userAgent) {
+							userAgent.unregister();
+							userAgent.stop();
+							userAgent = null;
+						}
+
+						isRegistered = false;
+						registeredUsername = null;
+						unregistrationPromise = null; // Clear promise on success
+						updateStatus("Disconnected");
+						log("Unregistered successfully");
+
+						document.getElementById("registerBtn").disabled = false;
+						document.getElementById("unregisterBtn").disabled =
+							true;
+						document.getElementById("callBtn").disabled = true;
+
+						resolve();
+					} catch (error) {
+						unregistrationPromise = null; // Clear promise on error
+						log(`Unregister failed: ${error.message}`);
+						console.error(error);
+						reject(error);
+					}
+				});
+
+				return unregistrationPromise;
 			}
 
 			// Make outgoing call
@@ -1661,8 +1824,8 @@
 					const hideCallerID =
 						document.getElementById("hideCallerID").checked;
 
-				const domain = SIP_DOMAIN;
-				const uri = `sip:${number}@${domain}`;
+					const domain = SIP_DOMAIN;
+					const uri = `sip:${number}@${domain}`;
 
 					const options = {
 						sessionDescriptionHandlerOptions: {
@@ -1703,51 +1866,83 @@
 						options.extraHeaders.push("Privacy: none");
 					}
 
-				currentSession = userAgent.invite(uri, options);
+					currentSession = userAgent.invite(uri, options);
 					__callDirection = "outgoing";
 					__originalCallNumber = number; // Store original number for call history
 
-				// WebSocket progress sniff for ringing parity
-				let sessionRingingStarted = false;
-				if (currentSession.request) {
-					const callId = currentSession.request.callId;
-					webSocketMessageHandler = function (e) {
-						if (e && e.data && e.data.includes(callId)) {
-							const lines = e.data.split("\r\n");
-							for (let line of lines) {
-								if (line.startsWith("SIP/2.0")) {
-									log(line);
-									if (!sessionRingingStarted && (line.includes("180 Ringing") || line.includes("183 Session Progress"))) {
-										startRinging();
-										sessionRingingStarted = true;
+					// WebSocket progress sniff for ringing parity
+					let sessionRingingStarted = false;
+					if (currentSession.request) {
+						const callId = currentSession.request.callId;
+						webSocketMessageHandler = function (e) {
+							if (e && e.data && e.data.includes(callId)) {
+								const lines = e.data.split("\r\n");
+								for (let line of lines) {
+									if (line.startsWith("SIP/2.0")) {
+										log(line);
+										if (
+											!sessionRingingStarted &&
+											(line.includes("180 Ringing") ||
+												line.includes(
+													"183 Session Progress",
+												))
+										) {
+											startRinging();
+											sessionRingingStarted = true;
+										}
+										if (
+											sessionRingingStarted &&
+											line.includes("200 OK")
+										) {
+											stopRinging();
+											sessionRingingStarted = false;
+										}
+										break;
 									}
-									if (sessionRingingStarted && line.includes("200 OK")) {
-										stopRinging();
-										sessionRingingStarted = false;
-									}
-									break;
 								}
 							}
+						};
+						if (userAgent.transport && userAgent.transport.ws) {
+							userAgent.transport.ws.addEventListener(
+								"message",
+								webSocketMessageHandler,
+							);
+							currentSession.on("terminated", () => {
+								if (sessionRingingStarted) {
+									stopRinging();
+									sessionRingingStarted = false;
+								}
+								if (
+									userAgent.transport &&
+									userAgent.transport.ws &&
+									webSocketMessageHandler
+								) {
+									userAgent.transport.ws.removeEventListener(
+										"message",
+										webSocketMessageHandler,
+									);
+									webSocketMessageHandler = null;
+								}
+							});
+							currentSession.on("failed", () => {
+								if (sessionRingingStarted) {
+									stopRinging();
+									sessionRingingStarted = false;
+								}
+								if (
+									userAgent.transport &&
+									userAgent.transport.ws &&
+									webSocketMessageHandler
+								) {
+									userAgent.transport.ws.removeEventListener(
+										"message",
+										webSocketMessageHandler,
+									);
+									webSocketMessageHandler = null;
+								}
+							});
 						}
-					};
-					if (userAgent.transport && userAgent.transport.ws) {
-						userAgent.transport.ws.addEventListener("message", webSocketMessageHandler);
-						currentSession.on("terminated", () => {
-							if (sessionRingingStarted) { stopRinging(); sessionRingingStarted = false; }
-							if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-								userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
-								webSocketMessageHandler = null;
-							}
-						});
-						currentSession.on("failed", () => {
-							if (sessionRingingStarted) { stopRinging(); sessionRingingStarted = false; }
-							if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-								userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
-								webSocketMessageHandler = null;
-							}
-						});
 					}
-				}
 
 					setupSessionHandlers(currentSession);
 
@@ -1815,10 +2010,15 @@
 
 				// Show incoming call notification (Android)
 				// Don't await - fire and forget to avoid blocking the call handling
-				showIncomingCallNotification(callerName, formattedNumber).catch(err => {
-					log('Error in showIncomingCallNotification: ' + err.message);
-					console.error('Notification error:', err);
-				});
+				showIncomingCallNotification(callerName, formattedNumber).catch(
+					(err) => {
+						log(
+							"Error in showIncomingCallNotification: " +
+								err.message,
+						);
+						console.error("Notification error:", err);
+					},
+				);
 
 				incomingCallTimeout = setTimeout(() => {
 					if (incomingSession) {
@@ -1989,7 +2189,11 @@
 							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
 						);
 						// Manage ringing via response events
-						if (!ringingStarted && (response.status_code === 180 || response.status_code === 183)) {
+						if (
+							!ringingStarted &&
+							(response.status_code === 180 ||
+								response.status_code === 183)
+						) {
 							startRinging();
 							ringingStarted = true;
 						}
@@ -2006,13 +2210,20 @@
 						response.status_code &&
 						response.reason_phrase
 					) {
-						log(`SIP/2.0 ${response.status_code} ${response.reason_phrase}`);
-						if (!ringingStarted && (response.status_code === 180 || response.status_code === 183)) {
+						log(
+							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+						);
+						if (
+							!ringingStarted &&
+							(response.status_code === 180 ||
+								response.status_code === 183)
+						) {
 							startRinging();
 							ringingStarted = true;
 						}
 						if (response.status_code === 183) {
-							const remoteAudio = document.getElementById("remoteAudio");
+							const remoteAudio =
+								document.getElementById("remoteAudio");
 							if (remoteAudio) {
 								remoteAudio.volume = 0;
 								log("Early media muted during ringing");
@@ -2022,7 +2233,10 @@
 				});
 
 				session.on("terminated", (message, cause) => {
-					if (ringingStarted) { stopRinging(); ringingStarted = false; }
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
 					log("Call ended" + (cause ? ": " + cause : ""));
 					endCall();
 				});
@@ -2038,8 +2252,6 @@
 						);
 					}
 
-
-
 					if (
 						cause &&
 						cause.includes("SESSION_DESCRIPTION_HANDLER_ERROR")
@@ -2053,7 +2265,10 @@
 					} else {
 						log("Call failed: " + (cause || "Unknown error"));
 					}
-					if (ringingStarted) { stopRinging(); ringingStarted = false; }
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
 					endCall();
 				});
 
@@ -2068,14 +2283,20 @@
 						);
 					}
 					log("Call rejected" + (cause ? ": " + cause : ""));
-					if (ringingStarted) { stopRinging(); ringingStarted = false; }
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
 					endCall();
 				});
 
 				session.on("bye", (request) => {
 					log("SIP BYE received");
 					log("Call ended by remote");
-					if (ringingStarted) { stopRinging(); ringingStarted = false; }
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
 					endCall();
 				});
 
@@ -2090,23 +2311,36 @@
 						);
 					}
 
-					if (ringingStarted) { stopRinging(); ringingStarted = false; }
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
 					activeCall = true;
 					log("Call connected");
 
 					// Handle Bluetooth audio routing
 					handleBluetoothAudio();
-					
+
 					// Configure audio session for lock screen continuity
 					configureAudioSession();
-					
+
 					// Auto-start recording if enabled (only when call is answered/connected)
-					const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
-					if (recordingEnabled && activeCall && session === currentSession) {
+					const recordingEnabled =
+						document.getElementById("enableCallRecording")
+							?.checked || false;
+					if (
+						recordingEnabled &&
+						activeCall &&
+						session === currentSession
+					) {
 						// Wait a bit for audio tracks to be fully ready after call is answered
 						setTimeout(async () => {
 							// Double-check call is still active before starting recording
-							if (activeCall && currentSession && currentSession === session) {
+							if (
+								activeCall &&
+								currentSession &&
+								currentSession === session
+							) {
 								await startRecording();
 							}
 						}, 500); // Small delay to ensure audio tracks are ready
@@ -2117,13 +2351,17 @@
 						currentSession.sessionDescriptionHandler &&
 						currentSession.sessionDescriptionHandler.peerConnection
 					) {
-						const pc = currentSession.sessionDescriptionHandler.peerConnection;
+						const pc =
+							currentSession.sessionDescriptionHandler
+								.peerConnection;
 						const remoteDesc = pc.remoteDescription;
 						if (remoteDesc && remoteDesc.sdp) {
 							if (remoteDesc.sdp.includes("telephone-event")) {
 								log("Remote supports RFC 2833 telephone-event");
 							} else {
-								log("⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF");
+								log(
+									"⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF",
+								);
 							}
 						}
 					}
@@ -2133,7 +2371,6 @@
 						"Type or press dialpad for DTMF";
 					document.getElementById("callNumber").focus();
 					startCallTimer();
-
 
 					try {
 						const pc =
@@ -2145,10 +2382,10 @@
 							}
 						});
 
-					const remoteAudio =
-						document.getElementById("remoteAudio");
-					remoteAudio.srcObject = remoteStream;
-					remoteAudio.volume = 1.0;
+						const remoteAudio =
+							document.getElementById("remoteAudio");
+						remoteAudio.srcObject = remoteStream;
+						remoteAudio.volume = 1.0;
 					} catch (e) {
 						log("Error setting up audio: " + e.message);
 					}
@@ -2168,11 +2405,11 @@
 						const remoteAudio =
 							document.getElementById("remoteAudio");
 						remoteAudio.srcObject = remoteStream;
-					// Early media muting while ringing (desktop parity)
-					if (remoteAudio && ringingStarted) {
-						remoteAudio.volume = 0;
-						log("Early media audio track muted");
-					}
+						// Early media muting while ringing (desktop parity)
+						if (remoteAudio && ringingStarted) {
+							remoteAudio.volume = 0;
+							log("Early media audio track muted");
+						}
 					} catch (e) {
 						log("Error handling track: " + e.message);
 					}
@@ -2216,38 +2453,42 @@
 				log(isMuted ? "Muted" : "Unmuted");
 			}
 
-
-		/**
-		 * Start call recording using MediaRecorder API
-		 * - iOS: Uses audio/mp4 (M4A) format with AAC codec for native compatibility
-		 * - Android: Falls back to audio/webm with opus codec
-		 * - Recordings are saved to native filesystem via Capacitor plugins
-		 */
-		async function startRecording() {
-			if (isRecording) {
-				log("Recording already in progress");
-				return;
-			}
+			/**
+			 * Start call recording using MediaRecorder API
+			 * - iOS: Uses audio/mp4 (M4A) format with AAC codec for native compatibility
+			 * - Android: Falls back to audio/webm with opus codec
+			 * - Recordings are saved to native filesystem via Capacitor plugins
+			 */
+			async function startRecording() {
+				if (isRecording) {
+					log("Recording already in progress");
+					return;
+				}
 
 				// Check if recording is enabled in settings
-				const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
+				const recordingEnabled =
+					document.getElementById("enableCallRecording")?.checked ||
+					false;
 				if (!recordingEnabled) {
 					log("Call recording is disabled in settings");
 					return;
 				}
 
 				try {
-					const pc = currentSession.sessionDescriptionHandler.peerConnection;
-					
+					const pc =
+						currentSession.sessionDescriptionHandler.peerConnection;
+
 					if (!pc) {
 						throw new Error("PeerConnection not available");
 					}
 
 					log("Checking audio tracks...");
-					
+
 					// Create audio context for mixing
-					recordingAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-					recordingDestination = recordingAudioContext.createMediaStreamDestination();
+					recordingAudioContext = new (window.AudioContext ||
+						window.webkitAudioContext)();
+					recordingDestination =
+						recordingAudioContext.createMediaStreamDestination();
 					recordingStream = recordingDestination.stream;
 
 					let tracksAdded = 0;
@@ -2257,13 +2498,20 @@
 					log(`Found ${receivers.length} receivers`);
 					receivers.forEach((receiver, idx) => {
 						if (receiver.track && receiver.track.kind === "audio") {
-							log(`Adding remote audio track ${idx}: ${receiver.track.id}, enabled: ${receiver.track.enabled}, muted: ${receiver.track.muted}`);
+							log(
+								`Adding remote audio track ${idx}: ${receiver.track.id}, enabled: ${receiver.track.enabled}, muted: ${receiver.track.muted}`,
+							);
 							try {
-								const remoteSource = recordingAudioContext.createMediaStreamSource(new MediaStream([receiver.track]));
+								const remoteSource =
+									recordingAudioContext.createMediaStreamSource(
+										new MediaStream([receiver.track]),
+									);
 								remoteSource.connect(recordingDestination);
 								tracksAdded++;
 							} catch (e) {
-								log(`Failed to add remote track ${idx}: ${e.message}`);
+								log(
+									`Failed to add remote track ${idx}: ${e.message}`,
+								);
 								console.error("Remote track error:", e);
 							}
 						}
@@ -2274,24 +2522,37 @@
 					log(`Found ${senders.length} senders`);
 					senders.forEach((sender, idx) => {
 						if (sender.track && sender.track.kind === "audio") {
-							log(`Adding local audio track ${idx}: ${sender.track.id}, enabled: ${sender.track.enabled}, muted: ${sender.track.muted}`);
+							log(
+								`Adding local audio track ${idx}: ${sender.track.id}, enabled: ${sender.track.enabled}, muted: ${sender.track.muted}`,
+							);
 							try {
-								const localSource = recordingAudioContext.createMediaStreamSource(new MediaStream([sender.track]));
+								const localSource =
+									recordingAudioContext.createMediaStreamSource(
+										new MediaStream([sender.track]),
+									);
 								localSource.connect(recordingDestination);
 								tracksAdded++;
 							} catch (e) {
-								log(`Failed to add local track ${idx}: ${e.message}`);
+								log(
+									`Failed to add local track ${idx}: ${e.message}`,
+								);
 								console.error("Local track error:", e);
 							}
 						}
 					});
 
 					if (tracksAdded === 0) {
-						throw new Error("No audio tracks available for recording");
+						throw new Error(
+							"No audio tracks available for recording",
+						);
 					}
 
-					log(`Connected ${tracksAdded} audio tracks to recording stream`);
-					log(`Recording stream has ${recordingStream.getAudioTracks().length} tracks`);
+					log(
+						`Connected ${tracksAdded} audio tracks to recording stream`,
+					);
+					log(
+						`Recording stream has ${recordingStream.getAudioTracks().length} tracks`,
+					);
 
 					// Check if MediaRecorder is available
 					if (!window.MediaRecorder) {
@@ -2299,47 +2560,55 @@
 					}
 
 					if (!MediaRecorder.isTypeSupported) {
-						throw new Error("MediaRecorder.isTypeSupported not available");
+						throw new Error(
+							"MediaRecorder.isTypeSupported not available",
+						);
 					}
 
 					// Find supported MIME type
 					// Prefer M4A (MP4/AAC) on iOS; WebM on other platforms
-					const isIOS = (window.Capacitor && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'ios') ||
+					const isIOS =
+						(window.Capacitor &&
+							typeof window.Capacitor.getPlatform ===
+								"function" &&
+							window.Capacitor.getPlatform() === "ios") ||
 						/\(iPad|iPhone|iPod\)/.test(navigator.userAgent);
 					const options = isIOS
 						? [
-							'audio/mp4;codecs=mp4a.40.2', // M4A/AAC
-							'audio/mp4',
-							'audio/aac',
-							'audio/webm;codecs=opus',
-							'audio/webm',
-							'audio/ogg;codecs=opus',
-							'audio/wav'
-						]
+								"audio/mp4;codecs=mp4a.40.2", // M4A/AAC
+								"audio/mp4",
+								"audio/aac",
+								"audio/webm;codecs=opus",
+								"audio/webm",
+								"audio/ogg;codecs=opus",
+								"audio/wav",
+							]
 						: [
-							'audio/webm;codecs=opus',
-							'audio/webm',
-							'audio/ogg;codecs=opus',
-							'audio/mp4;codecs=mp4a.40.2',
-							'audio/mp4',
-							'audio/mpeg',
-							'audio/wav'
-						];
-					
+								"audio/webm;codecs=opus",
+								"audio/webm",
+								"audio/ogg;codecs=opus",
+								"audio/mp4;codecs=mp4a.40.2",
+								"audio/mp4",
+								"audio/mpeg",
+								"audio/wav",
+							];
+
 					log("Checking supported audio formats...");
 					let mimeType = null;
 					for (let option of options) {
 						const supported = MediaRecorder.isTypeSupported(option);
-						log(`  ${option}: ${supported ? '✓' : '✗'}`);
+						log(`  ${option}: ${supported ? "✓" : "✗"}`);
 						if (supported && !mimeType) {
 							mimeType = option;
 						}
 					}
-					
+
 					if (!mimeType) {
 						// Fallback to platform-default
-						mimeType = isIOS ? 'audio/mp4' : 'audio/webm';
-						log(`No preferred format supported, using default: ${mimeType}`);
+						mimeType = isIOS ? "audio/mp4" : "audio/webm";
+						log(
+							`No preferred format supported, using default: ${mimeType}`,
+						);
 					} else {
 						log(`Selected MIME type: ${mimeType}`);
 					}
@@ -2353,45 +2622,51 @@
 					recordedChunks = [];
 					log("Creating MediaRecorder...");
 					mediaRecorder = new MediaRecorder(recordingStream, {
-						mimeType: mimeType
+						mimeType: mimeType,
 					});
 
 					mediaRecorder.ondataavailable = (event) => {
 						if (event.data && event.data.size > 0) {
 							recordedChunks.push(event.data);
-							log(`Recording data chunk: ${event.data.size} bytes (total chunks: ${recordedChunks.length})`);
+							log(
+								`Recording data chunk: ${event.data.size} bytes (total chunks: ${recordedChunks.length})`,
+							);
 						}
 					};
 
 					mediaRecorder.onstop = async () => {
-						log(`Recording stopped. Total chunks: ${recordedChunks.length}, total size: ${recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0)} bytes`);
+						log(
+							`Recording stopped. Total chunks: ${recordedChunks.length}, total size: ${recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0)} bytes`,
+						);
 						await saveRecording();
 					};
 
 					mediaRecorder.onerror = (event) => {
-						log(`Recording error: ${event.error || 'Unknown error'}`);
+						log(
+							`Recording error: ${event.error || "Unknown error"}`,
+						);
 						console.error("Recording error:", event);
 						isRecording = false;
 					};
 
 					// Store call info for recording metadata
 					recordingCallStartTime = callStartTime || Date.now();
-					recordingCallerNumber = __callDirection === "outgoing" 
-						? (__originalCallNumber || "Unknown")
-						: (__incomingRaw || __incomingDisplay || "Unknown");
+					recordingCallerNumber =
+						__callDirection === "outgoing"
+							? __originalCallNumber || "Unknown"
+							: __incomingRaw || __incomingDisplay || "Unknown";
 					recordingCallDirection = __callDirection || "unknown";
-					
+
 					// Start recording
 					log("Starting MediaRecorder...");
 					mediaRecorder.start(1000); // Collect data every second
 					isRecording = true;
 					log("Recording started successfully");
-
 				} catch (error) {
 					log(`Failed to start recording: ${error.message}`);
 					console.error("Recording start error:", error);
 					isRecording = false;
-					
+
 					// Clean up on error
 					if (recordingAudioContext) {
 						try {
@@ -2412,14 +2687,16 @@
 				try {
 					// Generate filename before stopping (so we can use it for history entry)
 					const callerNumber = recordingCallerNumber || "Unknown";
-					const filenameTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+					const filenameTimestamp = new Date()
+						.toISOString()
+						.replace(/[:.]/g, "-");
 					const filename = `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mediaRecorder.mimeType)}`;
 					currentRecordingFilename = filename;
-					
-					if (mediaRecorder.state === 'recording') {
+
+					if (mediaRecorder.state === "recording") {
 						mediaRecorder.stop();
 					}
-					
+
 					isRecording = false;
 					log("Recording stopped, saving file...");
 
@@ -2430,13 +2707,13 @@
 						recordingDestination = null;
 						recordingStream = null;
 					}
-					
+
 					// Wait a bit for saveRecording to complete (it's called from MediaRecorder's onstop event)
 					// Then clear metadata and return filename
-					await new Promise(resolve => setTimeout(resolve, 500));
-					
+					await new Promise((resolve) => setTimeout(resolve, 500));
+
 					const savedFilename = currentRecordingFilename;
-					
+
 					// Clear recording metadata
 					recordingCallStartTime = null;
 					recordingCallerNumber = null;
@@ -2444,7 +2721,6 @@
 					currentRecordingFilename = null;
 
 					return savedFilename;
-
 				} catch (error) {
 					log(`Failed to stop recording: ${error.message}`);
 					console.error("Recording stop error:", error);
@@ -2461,13 +2737,15 @@
 				}
 
 				try {
-					const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
-					
+					const blob = new Blob(recordedChunks, {
+						type: mediaRecorder.mimeType,
+					});
+
 					// Convert blob to base64 (handle large files properly)
 					const base64 = await new Promise((resolve, reject) => {
 						const reader = new FileReader();
 						reader.onloadend = () => {
-							const base64String = reader.result.split(',')[1]; // Remove data:audio/webm;base64, prefix
+							const base64String = reader.result.split(",")[1]; // Remove data:audio/webm;base64, prefix
 							resolve(base64String);
 						};
 						reader.onerror = reject;
@@ -2476,79 +2754,98 @@
 
 					// Use filename generated in stopRecording() or generate new one
 					const callerNumber = recordingCallerNumber || "Unknown";
-					const callTimestamp = recordingCallStartTime ? new Date(recordingCallStartTime).toISOString() : new Date().toISOString();
-					const filename = currentRecordingFilename || (() => {
-						const filenameTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
-						return `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mediaRecorder.mimeType)}`;
-					})();
+					const callTimestamp = recordingCallStartTime
+						? new Date(recordingCallStartTime).toISOString()
+						: new Date().toISOString();
+					const filename =
+						currentRecordingFilename ||
+						(() => {
+							const filenameTimestamp = new Date()
+								.toISOString()
+								.replace(/[:.]/g, "-");
+							return `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mediaRecorder.mimeType)}`;
+						})();
 
-				// Save to native platform
-				const isNative = window.Capacitor && 
-					((window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || 
-					 (window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'));
-				
-				if (isNative) {
-					const CallService = window.Capacitor.Plugins?.CallService;
-					const Filesystem = window.Capacitor.Plugins?.Filesystem;
-					
-					// Try native plugin first (saves to Application Support on iOS)
-					if (CallService?.saveRecording) {
-						try {
-							await CallService.saveRecording({
-								filename: filename,
-								data: base64,
-								mimeType: mediaRecorder.mimeType
-							});
-							log(`Recording saved: ${filename}`);
-							
-							await Storage.updateCallHistoryWithRecording(filename);
-							await Storage.addRecordingToHistory({
-								filename: filename,
-								callerNumber: callerNumber,
-								direction: recordingCallDirection || "unknown",
-								timestamp: callTimestamp,
-								duration: getCallDuration()
-							});
-							return;
-						} catch (error) {
-							console.error("Native plugin save failed:", error);
+					// Save to native platform
+					const isNative =
+						window.Capacitor &&
+						((window.Capacitor.isNativePlatform &&
+							window.Capacitor.isNativePlatform()) ||
+							(window.Capacitor.getPlatform &&
+								window.Capacitor.getPlatform() !== "web"));
+
+					if (isNative) {
+						const CallService =
+							window.Capacitor.Plugins?.CallService;
+						const Filesystem = window.Capacitor.Plugins?.Filesystem;
+
+						// Try native plugin first (saves to Application Support on iOS)
+						if (CallService?.saveRecording) {
+							try {
+								await CallService.saveRecording({
+									filename: filename,
+									data: base64,
+									mimeType: mediaRecorder.mimeType,
+								});
+								log(`Recording saved: ${filename}`);
+
+								await Storage.updateCallHistoryWithRecording(
+									filename,
+								);
+								await Storage.addRecordingToHistory({
+									filename: filename,
+									callerNumber: callerNumber,
+									direction:
+										recordingCallDirection || "unknown",
+									timestamp: callTimestamp,
+									duration: getCallDuration(),
+								});
+								return;
+							} catch (error) {
+								console.error(
+									"Native plugin save failed:",
+									error,
+								);
+							}
+						}
+
+						// Fallback to Filesystem plugin (saves to Documents on iOS)
+						if (Filesystem?.writeFile) {
+							try {
+								await Filesystem.mkdir({
+									path: "CallRecordings",
+									directory: "DATA",
+									recursive: true,
+								}).catch(() => {});
+
+								// Write base64 data (Capacitor auto-decodes to binary)
+								await Filesystem.writeFile({
+									path: `CallRecordings/${filename}`,
+									data: base64,
+									directory: "DATA",
+								});
+
+								log(`Recording saved: ${filename}`);
+								await Storage.updateCallHistoryWithRecording(
+									filename,
+								);
+								await Storage.addRecordingToHistory({
+									filename: filename,
+									callerNumber: callerNumber,
+									direction:
+										recordingCallDirection || "unknown",
+									timestamp: callTimestamp,
+									duration: getCallDuration(),
+								});
+								return;
+							} catch (error) {
+								console.error("Filesystem save failed:", error);
+							}
 						}
 					}
-					
-					// Fallback to Filesystem plugin (saves to Documents on iOS)
-					if (Filesystem?.writeFile) {
-						try {
-							await Filesystem.mkdir({ 
-								path: 'CallRecordings', 
-								directory: 'DATA', 
-								recursive: true 
-							}).catch(() => {});
-							
-							// Write base64 data (Capacitor auto-decodes to binary)
-							await Filesystem.writeFile({
-								path: `CallRecordings/${filename}`,
-								data: base64,
-								directory: 'DATA'
-							});
-							
-							log(`Recording saved: ${filename}`);
-							await Storage.updateCallHistoryWithRecording(filename);
-							await Storage.addRecordingToHistory({
-								filename: filename,
-								callerNumber: callerNumber,
-								direction: recordingCallDirection || "unknown",
-								timestamp: callTimestamp,
-								duration: getCallDuration()
-							});
-							return;
-						} catch (error) {
-							console.error('Filesystem save failed:', error);
-						}
-					}
-				}
 
-				// Web fallback: download file
-				downloadRecording(blob, filename);
+					// Web fallback: download file
+					downloadRecording(blob, filename);
 				} catch (error) {
 					log(`Failed to save recording: ${error.message}`);
 					console.error("Recording stop error:", error);
@@ -2559,7 +2856,7 @@
 
 			function downloadRecording(blob, filename) {
 				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
+				const a = document.createElement("a");
 				a.href = url;
 				a.download = filename;
 				document.body.appendChild(a);
@@ -2570,34 +2867,40 @@
 			}
 
 			function getFileExtension(mimeType) {
-				if (mimeType.includes('webm')) return 'webm';
-				if (mimeType.includes('ogg')) return 'ogg';
-				if (mimeType.includes('mp4')) return 'm4a';  // MP4 audio is typically M4A
-				if (mimeType.includes('aac')) return 'm4a';  // Prefer .m4a container naming for AAC
-				if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3';
-				if (mimeType.includes('wav')) return 'wav';
-				return 'webm';
+				if (mimeType.includes("webm")) return "webm";
+				if (mimeType.includes("ogg")) return "ogg";
+				if (mimeType.includes("mp4")) return "m4a"; // MP4 audio is typically M4A
+				if (mimeType.includes("aac")) return "m4a"; // Prefer .m4a container naming for AAC
+				if (mimeType.includes("mpeg") || mimeType.includes("mp3"))
+					return "mp3";
+				if (mimeType.includes("wav")) return "wav";
+				return "webm";
 			}
 
 			function getCallDuration() {
 				if (!callStartTime) return "00:00";
-				const duration = Math.floor((Date.now() - callStartTime) / 1000);
+				const duration = Math.floor(
+					(Date.now() - callStartTime) / 1000,
+				);
 				const minutes = Math.floor(duration / 60);
 				const seconds = duration % 60;
-				return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+				return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 			}
 
 			function showCallControls() {
 				document.getElementById("callControls").classList.add("active");
 				document.getElementById("callBtn").disabled = true;
 				hideDialpad();
-				
+
 				// Request wake lock to prevent screen sleep during calls
 				requestWakeLock();
-				
+
 				// Start Android foreground service to keep call alive in background
-				const callNumber = __originalCallNumber || __incomingRaw || 
-					document.getElementById("callNumber").value || "";
+				const callNumber =
+					__originalCallNumber ||
+					__incomingRaw ||
+					document.getElementById("callNumber").value ||
+					"";
 				startCallService(callNumber);
 			}
 
@@ -2607,39 +2910,44 @@
 					.classList.remove("active");
 				document.getElementById("callBtn").disabled = false;
 				showDialpad();
-				
+
 				// Release wake lock when call ends
 				releaseWakeLock();
 				stopCallTimer();
-				
+
 				// Stop Android foreground service
 				stopCallService();
 			}
 
 			async function endCall() {
 				// Clean up WebSocket event listeners
-				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+				if (
+					userAgent &&
+					userAgent.transport &&
+					userAgent.transport.ws &&
+					webSocketMessageHandler
+				) {
+					userAgent.transport.ws.removeEventListener(
+						"message",
+						webSocketMessageHandler,
+					);
 					webSocketMessageHandler = null;
 				}
-				
 
-				
-				
 				// Release wake lock when call ends
 				releaseWakeLock();
 				// Stop call timer
 				stopCallTimer();
-				
+
 				// Stop Android foreground service
 				stopCallService();
-				
+
 				// Stop recording if active and get filename (must be done before saving history)
 				let recordingFilename = null;
 				if (isRecording) {
 					recordingFilename = await stopRecording();
 				}
-				
+
 				// Save call to history (with recording filename if available)
 				try {
 					if (__callDirection === "outgoing") {
@@ -2648,7 +2956,7 @@
 							"outgoing",
 							num,
 							"Connected",
-							recordingFilename
+							recordingFilename,
 						);
 					} else if (__callDirection === "incoming") {
 						const num =
@@ -2659,7 +2967,7 @@
 							"incoming",
 							num,
 							"Connected",
-							recordingFilename
+							recordingFilename,
 						);
 					}
 				} catch (e) {
@@ -2677,13 +2985,13 @@
 					"Call in progress";
 				document.getElementById("callNumber").placeholder =
 					"Enter number to dial / DTMF during call";
-				
+
 				// Hide the "Show Dialpad" button when call ends
-				const showDialpadBtn = document.getElementById("showDialpadBtn");
+				const showDialpadBtn =
+					document.getElementById("showDialpadBtn");
 				if (showDialpadBtn) {
 					showDialpadBtn.style.display = "none";
 				}
-
 
 				// Handle Bluetooth audio disconnect
 				handleBluetoothDisconnect();
@@ -2704,12 +3012,14 @@
 
 			function updateCallDuration() {
 				if (!callStartTime) return;
-				const duration = Math.floor((Date.now() - callStartTime) / 1000);
+				const duration = Math.floor(
+					(Date.now() - callStartTime) / 1000,
+				);
 				const minutes = Math.floor(duration / 60);
 				const seconds = duration % 60;
-				document.getElementById("callDuration").textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+				document.getElementById("callDuration").textContent =
+					`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 			}
-
 
 			function appendNumber(num) {
 				const input = document.getElementById("callNumber");
@@ -2773,7 +3083,8 @@
 			// Dialpad layer management
 			function showDialpad() {
 				const dialpadLayer = document.getElementById("dialpadLayer");
-				const showDialpadBtn = document.getElementById("showDialpadBtn");
+				const showDialpadBtn =
+					document.getElementById("showDialpadBtn");
 				if (dialpadLayer) {
 					dialpadLayer.style.display = "block";
 				}
@@ -2784,7 +3095,8 @@
 
 			function hideDialpad() {
 				const dialpadLayer = document.getElementById("dialpadLayer");
-				const showDialpadBtn = document.getElementById("showDialpadBtn");
+				const showDialpadBtn =
+					document.getElementById("showDialpadBtn");
 				if (dialpadLayer) {
 					dialpadLayer.style.display = "none";
 				}
@@ -2796,39 +3108,51 @@
 
 			// Function to update event log visibility based on setting
 			function updateEventLogVisibility() {
-				const hideEventLogElement = document.getElementById("hideEventLog");
+				const hideEventLogElement =
+					document.getElementById("hideEventLog");
 				if (!hideEventLogElement) {
-					console.log("hideEventLog element not found, skipping visibility update");
+					console.log(
+						"hideEventLog element not found, skipping visibility update",
+					);
 					return;
 				}
-				
+
 				const hideEventLog = hideEventLogElement.checked;
-				const logButton = document.querySelector('.header-toggle[title="Event Log"]');
+				const logButton = document.querySelector(
+					'.header-toggle[title="Event Log"]',
+				);
 				const logSection = document.getElementById("logSection");
-				
-				console.log("updateEventLogVisibility called, hideEventLog:", hideEventLog);
+
+				console.log(
+					"updateEventLogVisibility called, hideEventLog:",
+					hideEventLog,
+				);
 				console.log("logButton found:", !!logButton);
 				console.log("logSection found:", !!logSection);
-				
+
 				if (hideEventLog) {
 					// Hide the event log button and section
 					if (logButton) {
-						logButton.style.display = 'none';
+						logButton.style.display = "none";
 						console.log("Event log button hidden");
 					}
 					if (logSection) {
-						logSection.style.display = 'none';
+						logSection.style.display = "none";
 						console.log("Event log section hidden");
 					}
 				} else {
 					// Show the event log button and section by removing the style (restores original CSS)
 					if (logButton) {
-						logButton.style.display = '';
-						console.log("Event log button shown (restored original styling)");
+						logButton.style.display = "";
+						console.log(
+							"Event log button shown (restored original styling)",
+						);
 					}
 					if (logSection) {
-						logSection.style.display = '';
-						console.log("Event log section shown (restored original styling)");
+						logSection.style.display = "";
+						console.log(
+							"Event log section shown (restored original styling)",
+						);
 					}
 				}
 			}
@@ -2879,7 +3203,7 @@
 					contacts: "Contacts",
 					settings: "Settings",
 					log: "Event Log",
-					history: "Call History"
+					history: "Call History",
 				};
 				const activeBtn = document.querySelector(
 					`.header-toggle[title="${titleMap[view] || "Phone"}"]`,
@@ -2909,7 +3233,7 @@
 					return;
 				}
 
-				el.innerHTML = '';
+				el.innerHTML = "";
 				history.forEach((item, index) => {
 					let icon = "❓"; // Default for unknown
 					let callType = "Unknown";
@@ -2930,34 +3254,50 @@
 
 					// Format phone number consistently
 					let displayNumber = item.number;
-					const cleanNumber = item.number.replace(/\D/g, '');
-					
+					const cleanNumber = item.number.replace(/\D/g, "");
+
 					if (cleanNumber.length === 10) {
 						// US format: (555) 123-4567
-						displayNumber = `(${cleanNumber.slice(0,3)}) ${cleanNumber.slice(3,6)}-${cleanNumber.slice(6)}`;
-					} else if (cleanNumber.length === 11 && cleanNumber.startsWith('1')) {
+						displayNumber = `(${cleanNumber.slice(0, 3)}) ${cleanNumber.slice(3, 6)}-${cleanNumber.slice(6)}`;
+					} else if (
+						cleanNumber.length === 11 &&
+						cleanNumber.startsWith("1")
+					) {
 						// 11 digits starting with 1: show as 10-digit format (555) 123-4567
-						displayNumber = `(${cleanNumber.slice(1,4)}) ${cleanNumber.slice(4,7)}-${cleanNumber.slice(7)}`;
+						displayNumber = `(${cleanNumber.slice(1, 4)}) ${cleanNumber.slice(4, 7)}-${cleanNumber.slice(7)}`;
 					} else if (cleanNumber.length === 7) {
 						// Local format: 123-4567
-						displayNumber = `${cleanNumber.slice(0,3)}-${cleanNumber.slice(3)}`;
+						displayNumber = `${cleanNumber.slice(0, 3)}-${cleanNumber.slice(3)}`;
 					} else if (cleanNumber.length > 11) {
 						// International format: +XX XXX XXX XXXX
-						const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
-						const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
-						const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
-						const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+						const countryCode = cleanNumber.slice(
+							0,
+							cleanNumber.length - 10,
+						);
+						const areaCode = cleanNumber.slice(
+							cleanNumber.length - 10,
+							cleanNumber.length - 7,
+						);
+						const firstPart = cleanNumber.slice(
+							cleanNumber.length - 7,
+							cleanNumber.length - 4,
+						);
+						const lastPart = cleanNumber.slice(
+							cleanNumber.length - 4,
+						);
 						displayNumber = `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
 					}
 
 					const timestamp = new Date(item.timestamp).toLocaleString();
-					const safeNumber = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
-					
+					const safeNumber = cleanNumber
+						.replace(/'/g, "\\'")
+						.replace(/"/g, '\\"');
+
 					// Check if this call has a recording (stored directly in history entry)
 					const recordingFilename = item.recording || null;
-					
-					const historyDiv = document.createElement('div');
-					historyDiv.className = 'contact-item';
+
+					const historyDiv = document.createElement("div");
+					historyDiv.className = "contact-item";
 					historyDiv.style.cssText = `
 						padding: 16px 20px;
 						border-bottom: 1px solid #f0f0f0;
@@ -2965,15 +3305,15 @@
 						transition: all 0.2s ease;
 						background: white;
 					`;
-					
+
 					// Create the history display HTML
-					let recordingHTML = '';
+					let recordingHTML = "";
 					if (recordingFilename) {
 						recordingHTML = `
 							<div style="margin-top: 8px; margin-left: 30px;">
-								<audio 
-									id="history-recording-${index}" 
-									controls 
+								<audio
+									id="history-recording-${index}"
+									controls
 									playsinline
 									style="width: 100%; max-width: 350px; height: 32px;"
 									preload="metadata"
@@ -2983,13 +3323,13 @@
 							</div>
 						`;
 					}
-					
+
 					const historyHTML = `
 						<div style="padding: 6px 0;">
 							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
 								<span style="font-size: 18px;">${icon}</span>
 								<div style="flex: 1;">
-									<button onclick="redial('${safeNumber}')" 
+									<button onclick="redial('${safeNumber}')"
 										style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left; font-weight: 600;">
 										${displayNumber}
 									</button>
@@ -3004,74 +3344,112 @@
 							${recordingHTML}
 						</div>
 					`;
-					
+
 					historyDiv.innerHTML = historyHTML;
-					
-					historyDiv.addEventListener('mouseenter', () => {
-						historyDiv.style.backgroundColor = '#f5f5f5';
+
+					historyDiv.addEventListener("mouseenter", () => {
+						historyDiv.style.backgroundColor = "#f5f5f5";
 					});
-					historyDiv.addEventListener('mouseleave', () => {
-						historyDiv.style.backgroundColor = 'transparent';
+					historyDiv.addEventListener("mouseleave", () => {
+						historyDiv.style.backgroundColor = "transparent";
 					});
-					
+
 					el.appendChild(historyDiv);
-					
-				// Load recording audio source if available
-				if (recordingFilename) {
-					setTimeout(async () => {
-						const audioEl = document.getElementById(`history-recording-${index}`);
-						if (!audioEl) return;
-						
-						try {
-							if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-                                const platform = window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'unknown';
-								
-                                // Single path: VTCallService on all platforms
-                                const { VTCallService } = window.Capacitor.Plugins;
-                                if (!VTCallService) throw new Error('VTCallService not available');
-								
-                                const result = await VTCallService.getRecordingFileUrl({ filename: recordingFilename });
-								
-                                if (result && result.url) {
-                                    // Convert data URL to blob URL for both platforms to avoid size limits
-                                    // This is more memory efficient and works better for long recordings
-                                    const match = result.url.match(/^data:([^;]+);base64,(.+)$/);
-                                    if (match) {
-                                        const mimeType = match[1];
-                                        const base64Data = match[2];
-                                        
-                                        // Decode base64 to binary
-                                        const bytes = atob(base64Data);
-                                        const arr = new Uint8Array(bytes.length);
-                                        for (let i = 0; i < bytes.length; i++) {
-                                            arr[i] = bytes.charCodeAt(i);
-                                        }
-                                        
-                                        // Create blob URL (more efficient than data URLs for large files)
-                                        const blob = new Blob([arr], { type: mimeType });
-                                        const blobUrl = URL.createObjectURL(blob);
-                                        
-                                        // Clean up old blob URL if exists
-                                        if (audioEl._oldBlobUrl) {
-                                            URL.revokeObjectURL(audioEl._oldBlobUrl);
-                                        }
-                                        audioEl._oldBlobUrl = blobUrl;
-                                        audioEl.src = blobUrl;
-                                    } else {
-                                        // Fallback: use URL directly if not a data URL
-                                        audioEl.src = result.url;
-                                    }
-                                }
-								
-								audioEl.addEventListener('error', (e) => {
-									console.error('Recording playback error:', audioEl.error);
-								}, { once: true });
+
+					// Load recording audio source if available
+					if (recordingFilename) {
+						setTimeout(async () => {
+							const audioEl = document.getElementById(
+								`history-recording-${index}`,
+							);
+							if (!audioEl) return;
+
+							try {
+								if (
+									window.Capacitor &&
+									window.Capacitor.isNativePlatform()
+								) {
+									const platform = window.Capacitor
+										.getPlatform
+										? window.Capacitor.getPlatform()
+										: "unknown";
+
+									// Single path: VTCallService on all platforms
+									const { VTCallService } =
+										window.Capacitor.Plugins;
+									if (!VTCallService)
+										throw new Error(
+											"VTCallService not available",
+										);
+
+									const result =
+										await VTCallService.getRecordingFileUrl(
+											{ filename: recordingFilename },
+										);
+
+									if (result && result.url) {
+										// Convert data URL to blob URL for both platforms to avoid size limits
+										// This is more memory efficient and works better for long recordings
+										const match = result.url.match(
+											/^data:([^;]+);base64,(.+)$/,
+										);
+										if (match) {
+											const mimeType = match[1];
+											const base64Data = match[2];
+
+											// Decode base64 to binary
+											const bytes = atob(base64Data);
+											const arr = new Uint8Array(
+												bytes.length,
+											);
+											for (
+												let i = 0;
+												i < bytes.length;
+												i++
+											) {
+												arr[i] = bytes.charCodeAt(i);
+											}
+
+											// Create blob URL (more efficient than data URLs for large files)
+											const blob = new Blob([arr], {
+												type: mimeType,
+											});
+											const blobUrl =
+												URL.createObjectURL(blob);
+
+											// Clean up old blob URL if exists
+											if (audioEl._oldBlobUrl) {
+												URL.revokeObjectURL(
+													audioEl._oldBlobUrl,
+												);
+											}
+											audioEl._oldBlobUrl = blobUrl;
+											audioEl.src = blobUrl;
+										} else {
+											// Fallback: use URL directly if not a data URL
+											audioEl.src = result.url;
+										}
+									}
+
+									audioEl.addEventListener(
+										"error",
+										(e) => {
+											console.error(
+												"Recording playback error:",
+												audioEl.error,
+											);
+										},
+										{ once: true },
+									);
+								}
+							} catch (error) {
+								console.error(
+									"Error loading recording:",
+									error,
+								);
 							}
-						} catch (error) {
-							console.error("Error loading recording:", error);
-						}
-					}, 100);
-				}
+						}, 100);
+					}
 				});
 			}
 
@@ -3084,31 +3462,47 @@
 				try {
 					// Get all recordings from metadata storage
 					const recordings = await Storage.getRecordings();
-					
+
 					// Get all history entries to find recording filenames
 					const history = await Storage.getHistory();
 					const historyRecordings = history
-						.filter(item => item.recording)
-						.map(item => item.recording);
+						.filter((item) => item.recording)
+						.map((item) => item.recording);
 
 					// Combine all recording filenames (remove duplicates)
-					const allRecordings = [...new Set([...recordings.map(r => r.filename), ...historyRecordings])];
+					const allRecordings = [
+						...new Set([
+							...recordings.map((r) => r.filename),
+							...historyRecordings,
+						]),
+					];
 
 					log(`Deleting ${allRecordings.length} recording files...`);
 
 					// Delete all recording files via native plugin
 					let deletedCount = 0;
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-						const CallService = window.Capacitor.Plugins.CallService;
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
 						for (const filename of allRecordings) {
 							try {
-								const result = await CallService.deleteRecordingFile({ filename });
+								const result =
+									await CallService.deleteRecordingFile({
+										filename,
+									});
 								if (result && result.success) {
 									deletedCount++;
 								}
 							} catch (error) {
-								console.error(`Failed to delete ${filename}:`, error);
+								console.error(
+									`Failed to delete ${filename}:`,
+									error,
+								);
 							}
 						}
 					}
@@ -3125,7 +3519,7 @@
 					await localforage.setItem(Storage.HISTORY_KEY, history);
 
 					log(`Deleted ${deletedCount} recording files.`);
-					
+
 					// Refresh call history display
 					renderCallHistory();
 				} catch (error) {
@@ -3134,47 +3528,62 @@
 				}
 			}
 
-
 			// Contact management functions
 			let contactsList = [];
 
 			async function loadContacts() {
 				try {
 					// Check if Capacitor and Contacts plugin are available
-					if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.Contacts) {
-						log("Contacts plugin not available - make sure you're running on a device");
-						alert("Contacts plugin is not available. Please make sure you're running the app on a mobile device.");
+					if (
+						!window.Capacitor ||
+						!window.Capacitor.Plugins ||
+						!window.Capacitor.Plugins.Contacts
+					) {
+						log(
+							"Contacts plugin not available - make sure you're running on a device",
+						);
+						alert(
+							"Contacts plugin is not available. Please make sure you're running the app on a mobile device.",
+						);
 						return;
 					}
 
 					const Contacts = window.Capacitor.Plugins.Contacts;
 					log("Requesting contacts permission...");
 					const permission = await Contacts.requestPermissions();
-					
-					if (permission.contacts === 'granted') {
+
+					if (permission.contacts === "granted") {
 						log("Loading contacts...");
 						const result = await Contacts.getContacts({
 							projection: {
 								name: true,
 								phones: true,
 								emails: true,
-								image: true
-							}
+								image: true,
+							},
 						});
-						
+
 						contactsList = result.contacts || [];
 						log(`Loaded ${contactsList.length} contacts`);
-						
+
 						// Debug: Log the first contact to see the structure
 						if (contactsList.length > 0) {
-							console.log('First contact structure:', contactsList[0]);
-							log('First contact: ' + JSON.stringify(contactsList[0]));
+							console.log(
+								"First contact structure:",
+								contactsList[0],
+							);
+							log(
+								"First contact: " +
+									JSON.stringify(contactsList[0]),
+							);
 						}
-						
+
 						renderContacts();
 					} else {
 						log("Contacts permission denied");
-						alert("Contacts permission is required to load your contacts.");
+						alert(
+							"Contacts permission is required to load your contacts.",
+						);
 					}
 				} catch (error) {
 					log(`Error loading contacts: ${error.message}`);
@@ -3201,54 +3610,66 @@
 				}
 
 				// Filter contacts that have phone numbers and clean/unique them
-				const contactsWithPhones = contactsList.filter(contact => {
+				const contactsWithPhones = contactsList.filter((contact) => {
 					const phones = contact.phones || [];
-					return phones.length > 0 && phones.some(phone => {
-						const phoneNumber = typeof phone === 'string' ? phone : phone.number;
-						return phoneNumber && phoneNumber.trim().length > 0;
-					});
+					return (
+						phones.length > 0 &&
+						phones.some((phone) => {
+							const phoneNumber =
+								typeof phone === "string"
+									? phone
+									: phone.number;
+							return phoneNumber && phoneNumber.trim().length > 0;
+						})
+					);
 				});
 
 				// Sort contacts alphabetically by name
 				contactsWithPhones.sort((a, b) => {
 					// Extract names for comparison
-					let nameA = 'Unknown';
-					let nameB = 'Unknown';
-					
+					let nameA = "Unknown";
+					let nameB = "Unknown";
+
 					if (a.name) {
-						if (typeof a.name === 'string') {
+						if (typeof a.name === "string") {
 							nameA = a.name;
 						} else if (a.name.display) {
 							nameA = a.name.display;
 						} else if (a.name.given || a.name.family) {
-							nameA = `${a.name.given || ''} ${a.name.family || ''}`.trim();
+							nameA =
+								`${a.name.given || ""} ${a.name.family || ""}`.trim();
 						} else if (a.name.givenName || a.name.familyName) {
-							nameA = `${a.name.givenName || ''} ${a.name.familyName || ''}`.trim();
+							nameA =
+								`${a.name.givenName || ""} ${a.name.familyName || ""}`.trim();
 						} else if (a.name.displayName) {
 							nameA = a.name.displayName;
 						}
 					} else if (a.displayName) {
 						nameA = a.displayName;
 					}
-					
+
 					if (b.name) {
-						if (typeof b.name === 'string') {
+						if (typeof b.name === "string") {
 							nameB = b.name;
 						} else if (b.name.display) {
 							nameB = b.name.display;
 						} else if (b.name.given || b.name.family) {
-							nameB = `${b.name.given || ''} ${b.name.family || ''}`.trim();
+							nameB =
+								`${b.name.given || ""} ${b.name.family || ""}`.trim();
 						} else if (b.name.givenName || b.name.familyName) {
-							nameB = `${b.name.givenName || ''} ${b.name.familyName || ''}`.trim();
+							nameB =
+								`${b.name.givenName || ""} ${b.name.familyName || ""}`.trim();
 						} else if (b.name.displayName) {
 							nameB = b.name.displayName;
 						}
 					} else if (b.displayName) {
 						nameB = b.displayName;
 					}
-					
+
 					// Compare names alphabetically (case-insensitive)
-					return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
+					return nameA
+						.toLowerCase()
+						.localeCompare(nameB.toLowerCase());
 				});
 
 				if (contactsWithPhones.length === 0) {
@@ -3260,77 +3681,104 @@
 					return;
 				}
 
-				el.innerHTML = '';
+				el.innerHTML = "";
 				contactsWithPhones.forEach((contact, index) => {
 					// Extract contact information properly - handle different data structures
-					let name = 'Unknown';
+					let name = "Unknown";
 					if (contact.name) {
-						if (typeof contact.name === 'string') {
+						if (typeof contact.name === "string") {
 							name = contact.name;
 						} else if (contact.name.display) {
 							name = contact.name.display;
 						} else if (contact.name.given || contact.name.family) {
-							name = `${contact.name.given || ''} ${contact.name.family || ''}`.trim();
-						} else if (contact.name.givenName || contact.name.familyName) {
-							name = `${contact.name.givenName || ''} ${contact.name.familyName || ''}`.trim();
+							name =
+								`${contact.name.given || ""} ${contact.name.family || ""}`.trim();
+						} else if (
+							contact.name.givenName ||
+							contact.name.familyName
+						) {
+							name =
+								`${contact.name.givenName || ""} ${contact.name.familyName || ""}`.trim();
 						} else if (contact.name.displayName) {
 							name = contact.name.displayName;
 						}
 					} else if (contact.displayName) {
 						name = contact.displayName;
 					}
-					
+
 					// Create a safe display name (escape quotes) - only if name is a string
-					const safeName = typeof name === 'string' ? name.replace(/'/g, "\\'").replace(/"/g, '\\"') : 'Unknown';
-					
+					const safeName =
+						typeof name === "string"
+							? name.replace(/'/g, "\\'").replace(/"/g, '\\"')
+							: "Unknown";
+
 					const phones = contact.phones || [];
-					let phoneLines = '';
+					let phoneLines = "";
 					const uniquePhones = new Set(); // Track unique phone numbers
-					
+
 					phones.forEach((phone, index) => {
-						let phoneNumber = '';
-						let phoneType = 'Phone';
-						
-						if (typeof phone === 'string') {
+						let phoneNumber = "";
+						let phoneType = "Phone";
+
+						if (typeof phone === "string") {
 							phoneNumber = phone;
-							phoneType = 'Phone';
+							phoneType = "Phone";
 						} else if (phone.number) {
 							phoneNumber = phone.number;
-							phoneType = phone.type || 'Phone';
+							phoneType = phone.type || "Phone";
 						}
-						
+
 						if (phoneNumber) {
 							// Clean the phone number (remove all non-digits)
-							const cleanNumber = phoneNumber.replace(/\D/g, '');
-							
+							const cleanNumber = phoneNumber.replace(/\D/g, "");
+
 							// Only add if we haven't seen this number before and it's not empty
-							if (cleanNumber.length > 0 && !uniquePhones.has(cleanNumber)) {
+							if (
+								cleanNumber.length > 0 &&
+								!uniquePhones.has(cleanNumber)
+							) {
 								uniquePhones.add(cleanNumber);
-								
+
 								// Format the display number based on length
 								let displayNumber = cleanNumber;
 								if (cleanNumber.length === 10) {
 									// US format: (555) 123-4567
-									displayNumber = `(${cleanNumber.slice(0,3)}) ${cleanNumber.slice(3,6)}-${cleanNumber.slice(6)}`;
-								} else if (cleanNumber.length === 11 && cleanNumber.startsWith('1')) {
+									displayNumber = `(${cleanNumber.slice(0, 3)}) ${cleanNumber.slice(3, 6)}-${cleanNumber.slice(6)}`;
+								} else if (
+									cleanNumber.length === 11 &&
+									cleanNumber.startsWith("1")
+								) {
 									// 11 digits starting with 1: show as 10-digit format (555) 123-4567
-									displayNumber = `(${cleanNumber.slice(1,4)}) ${cleanNumber.slice(4,7)}-${cleanNumber.slice(7)}`;
+									displayNumber = `(${cleanNumber.slice(1, 4)}) ${cleanNumber.slice(4, 7)}-${cleanNumber.slice(7)}`;
 								} else if (cleanNumber.length === 7) {
 									// Local format: 123-4567
-									displayNumber = `${cleanNumber.slice(0,3)}-${cleanNumber.slice(3)}`;
+									displayNumber = `${cleanNumber.slice(0, 3)}-${cleanNumber.slice(3)}`;
 								} else if (cleanNumber.length > 11) {
 									// International format: +XX XXX XXX XXXX
-									const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
-									const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
-									const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
-									const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+									const countryCode = cleanNumber.slice(
+										0,
+										cleanNumber.length - 10,
+									);
+									const areaCode = cleanNumber.slice(
+										cleanNumber.length - 10,
+										cleanNumber.length - 7,
+									);
+									const firstPart = cleanNumber.slice(
+										cleanNumber.length - 7,
+										cleanNumber.length - 4,
+									);
+									const lastPart = cleanNumber.slice(
+										cleanNumber.length - 4,
+									);
 									displayNumber = `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
 								}
-								
-								const safePhone = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
+
+								const safePhone = cleanNumber
+									.replace(/'/g, "\\'")
+									.replace(/"/g, '\\"');
 								phoneLines += `
 									<div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 2px 0; padding: 3px 0;">
-										<button onclick="callContact('${safePhone}', '${safeName}')" 
+										<button onclick="callContact('${safePhone}', '${safeName}')"
 											style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left;">
 											${displayNumber}
 										</button>
@@ -3342,9 +3790,9 @@
 							}
 						}
 					});
-					
-					const contactDiv = document.createElement('div');
-					contactDiv.className = 'contact-item';
+
+					const contactDiv = document.createElement("div");
+					contactDiv.className = "contact-item";
 					contactDiv.style.cssText = `
 						padding: 16px 20px;
 						border-bottom: 1px solid #f0f0f0;
@@ -3352,7 +3800,7 @@
 						transition: all 0.2s ease;
 						background: white;
 					`;
-					
+
 					// Create the contact display HTML with multiple phone numbers
 					const contactHTML = `
 						<div style="padding: 6px 0;">
@@ -3362,27 +3810,27 @@
 							${phoneLines}
 						</div>
 					`;
-					
+
 					contactDiv.innerHTML = contactHTML;
-					
-					contactDiv.addEventListener('mouseenter', () => {
-						contactDiv.style.backgroundColor = '#f5f5f5';
+
+					contactDiv.addEventListener("mouseenter", () => {
+						contactDiv.style.backgroundColor = "#f5f5f5";
 					});
-					contactDiv.addEventListener('mouseleave', () => {
-						contactDiv.style.backgroundColor = 'transparent';
+					contactDiv.addEventListener("mouseleave", () => {
+						contactDiv.style.backgroundColor = "transparent";
 					});
-					
+
 					el.appendChild(contactDiv);
 				});
 			}
 
 			function callContact(phoneNumber, contactName) {
 				// Clean the phone number
-				const cleanNumber = phoneNumber.replace(/\D/g, '');
+				const cleanNumber = phoneNumber.replace(/\D/g, "");
 				document.getElementById("callNumber").value = cleanNumber;
 				__originalCallNumber = cleanNumber; // Store original number for call history
 				setView("phone");
-				
+
 				if (isRegistered) {
 					makeCall();
 				} else {
@@ -3400,41 +3848,61 @@
 			function setupContactSearch() {
 				const searchInput = document.getElementById("contactSearch");
 				if (searchInput) {
-					searchInput.addEventListener('input', (e) => {
+					searchInput.addEventListener("input", (e) => {
 						const query = e.target.value.toLowerCase();
-						if (query === '') {
+						if (query === "") {
 							renderContacts();
 							return;
 						}
-						
-						const filteredContacts = contactsList.filter(contact => {
-							// Extract contact name properly - same logic as renderContacts
-							let name = 'Unknown';
-							if (contact.name) {
-								if (typeof contact.name === 'string') {
-									name = contact.name;
-								} else if (contact.name.display) {
-									name = contact.name.display;
-								} else if (contact.name.given || contact.name.family) {
-									name = `${contact.name.given || ''} ${contact.name.family || ''}`.trim();
-								} else if (contact.name.givenName || contact.name.familyName) {
-									name = `${contact.name.givenName || ''} ${contact.name.familyName || ''}`.trim();
-								} else if (contact.name.displayName) {
-									name = contact.name.displayName;
+
+						const filteredContacts = contactsList.filter(
+							(contact) => {
+								// Extract contact name properly - same logic as renderContacts
+								let name = "Unknown";
+								if (contact.name) {
+									if (typeof contact.name === "string") {
+										name = contact.name;
+									} else if (contact.name.display) {
+										name = contact.name.display;
+									} else if (
+										contact.name.given ||
+										contact.name.family
+									) {
+										name =
+											`${contact.name.given || ""} ${contact.name.family || ""}`.trim();
+									} else if (
+										contact.name.givenName ||
+										contact.name.familyName
+									) {
+										name =
+											`${contact.name.givenName || ""} ${contact.name.familyName || ""}`.trim();
+									} else if (contact.name.displayName) {
+										name = contact.name.displayName;
+									}
+								} else if (contact.displayName) {
+									name = contact.displayName;
 								}
-							} else if (contact.displayName) {
-								name = contact.displayName;
-							}
-							
-							const nameMatch = name.toLowerCase().includes(query);
-							const phones = contact.phones || [];
-							const phoneMatch = phones.some(phone => {
-								const phoneNumber = typeof phone === 'string' ? phone : phone.number;
-								return phoneNumber && phoneNumber.toLowerCase().includes(query);
-							});
-							return nameMatch || phoneMatch;
-						});
-						
+
+								const nameMatch = name
+									.toLowerCase()
+									.includes(query);
+								const phones = contact.phones || [];
+								const phoneMatch = phones.some((phone) => {
+									const phoneNumber =
+										typeof phone === "string"
+											? phone
+											: phone.number;
+									return (
+										phoneNumber &&
+										phoneNumber
+											.toLowerCase()
+											.includes(query)
+									);
+								});
+								return nameMatch || phoneMatch;
+							},
+						);
+
 						// Temporarily replace contactsList for rendering
 						const originalContacts = contactsList;
 						contactsList = filteredContacts;
@@ -3493,80 +3961,121 @@
 
 			// App state management for re-registration
 			function setupAppStateListeners() {
-				log('Setting up app state listeners...');
-				
+				log("Setting up app state listeners...");
+
 				// Always set up visibility change listener as primary method
-				document.addEventListener('visibilitychange', async function() {
-					log('Visibility change detected - document.hidden: ' + document.hidden);
-					if (!document.hidden) {
-						log('App brought to foreground (visibility) - WebSocket may have been killed, checking if re-registration needed...');
-						await reRegister(); // AWAIT the async function to ensure service check completes
-					} else {
-						log('App moved to background (visibility) - WebSocket will likely be killed');
-					}
-				});
-				
-				log('Visibility change listener added');
-				
+				document.addEventListener(
+					"visibilitychange",
+					async function () {
+						log(
+							"Visibility change detected - document.hidden: " +
+								document.hidden,
+						);
+						if (!document.hidden) {
+							log(
+								"App brought to foreground (visibility) - WebSocket may have been killed, checking if re-registration needed...",
+							);
+							await reRegister(); // AWAIT the async function to ensure service check completes
+						} else {
+							log(
+								"App moved to background (visibility) - WebSocket will likely be killed",
+							);
+						}
+					},
+				);
+
+				log("Visibility change listener added");
+
 				// Try to set up Capacitor listeners if available (only once)
 				setTimeout(() => {
-					if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-						log('Capacitor detected - setting up native app state listeners');
-						
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform()
+					) {
+						log(
+							"Capacitor detected - setting up native app state listeners",
+						);
+
 						// Try to access Capacitor App API
-						if (window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+						if (
+							window.Capacitor.Plugins &&
+							window.Capacitor.Plugins.App
+						) {
 							const App = window.Capacitor.Plugins.App;
-							
+
 							// Listen for app state changes (only one listener)
-							App.addListener('appStateChange', async ({ isActive }) => {
-								if (isActive) {
-									log('App brought to foreground (Capacitor) - checking registration');
-									await reRegister(); // AWAIT the async function to ensure service check completes
-								} else {
-									log('App moved to background (Capacitor)');
-								}
-							});
-							
-							log('Capacitor app state listeners configured');
+							App.addListener(
+								"appStateChange",
+								async ({ isActive }) => {
+									if (isActive) {
+										log(
+											"App brought to foreground (Capacitor) - checking registration",
+										);
+										await reRegister(); // AWAIT the async function to ensure service check completes
+									} else {
+										log(
+											"App moved to background (Capacitor)",
+										);
+									}
+								},
+							);
+
+							log("Capacitor app state listeners configured");
 						} else {
-							log('Capacitor App plugin not available');
+							log("Capacitor App plugin not available");
 						}
 					} else {
-						log('Not running on native platform - using visibility API only');
+						log(
+							"Not running on native platform - using visibility API only",
+						);
 					}
 				}, 2000);
 			}
 
 			// Re-registration function with debouncing
 			async function reRegister() {
-				log('=== RE-REGISTER FUNCTION CALLED ===');
+				log("=== RE-REGISTER FUNCTION CALLED ===");
 				// If there is a pending incoming session, never re-register
 				if (incomingSession) {
-					log('RE-REGISTER: Incoming session pending - skipping');
+					log("RE-REGISTER: Incoming session pending - skipping");
 					return;
 				}
-				
+
 				// CRITICAL: Do not re-register if there's an active call!
 				// First check: If we just returned from notification tap, skip re-registration
 				// This flag is set by MainActivity.onNewIntent() when notification is tapped
 				// The notification is only shown during active calls, so skip re-registration
 				if (window.__skipReRegisterForNotification === true) {
-					log('RE-REGISTER: Returning from notification tap (active call) - IMMEDIATELY skipping re-registration');
+					log(
+						"RE-REGISTER: Returning from notification tap (active call) - IMMEDIATELY skipping re-registration",
+					);
 					return;
 				}
-				
+
 				// Second check: If CallForegroundService is running, there's definitely an active call
 				// This is the most reliable check - service only runs during calls
 				// MUST check this BEFORE setting timeout - this blocks until we know
-				if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-					window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-					log('RE-REGISTER: Checking if CallForegroundService is running...');
+				if (
+					window.Capacitor &&
+					window.Capacitor.isNativePlatform() &&
+					window.Capacitor.Plugins &&
+					window.Capacitor.Plugins.CallService
+				) {
+					log(
+						"RE-REGISTER: Checking if CallForegroundService is running...",
+					);
 					try {
-						const CallService = window.Capacitor.Plugins.CallService;
+						const CallService =
+							window.Capacitor.Plugins.CallService;
 						const result = await CallService.isServiceRunning();
-						log('RE-REGISTER: Service check result: ' + JSON.stringify(result));
+						log(
+							"RE-REGISTER: Service check result: " +
+								JSON.stringify(result),
+						);
 						if (result && result.isRunning === true) {
-							log('RE-REGISTER: CallForegroundService is running (active call) - IMMEDIATELY skipping re-registration');
+							log(
+								"RE-REGISTER: CallForegroundService is running (active call) - IMMEDIATELY skipping re-registration",
+							);
 							// Clear any pending timeout
 							if (reRegisterTimeout) {
 								clearTimeout(reRegisterTimeout);
@@ -3574,221 +4083,345 @@
 							}
 							return;
 						} else {
-							log('RE-REGISTER: CallForegroundService is NOT running (isRunning=' + (result ? result.isRunning : 'null') + ') - will proceed with re-registration check');
+							log(
+								"RE-REGISTER: CallForegroundService is NOT running (isRunning=" +
+									(result ? result.isRunning : "null") +
+									") - will proceed with re-registration check",
+							);
 						}
 					} catch (err) {
-						log('RE-REGISTER: Failed to check service status: ' + (err.message || err) + ' - will proceed with other checks');
-						console.error('Service check error:', err);
+						log(
+							"RE-REGISTER: Failed to check service status: " +
+								(err.message || err) +
+								" - will proceed with other checks",
+						);
+						console.error("Service check error:", err);
 					}
 				} else {
-					log('RE-REGISTER: CallService plugin not available - skipping service check');
+					log(
+						"RE-REGISTER: CallService plugin not available - skipping service check",
+					);
 				}
-				
+
 				// Second check: currentSession - if it exists, it means there's either:
 				// 1. An active call (has dialog or peer connection)
 				// 2. A call in progress (INVITE sent but not yet answered)
 				// In both cases, we must NOT re-register as it would terminate the call
 				if (currentSession) {
 					// Check if session has a request (INVITE sent/received) or is established (has dialog/peerConnection)
-					const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
-					const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
-					const hasPeerConnection = currentSession.sessionDescriptionHandler && 
-						currentSession.sessionDescriptionHandler.peerConnection !== null &&
-						currentSession.sessionDescriptionHandler.peerConnection !== undefined;
+					const hasRequest =
+						currentSession.request !== null &&
+						currentSession.request !== undefined;
+					const hasDialog =
+						currentSession.dialog !== null &&
+						currentSession.dialog !== undefined;
+					const hasPeerConnection =
+						currentSession.sessionDescriptionHandler &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== null &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== undefined;
 					// Session is active if it has a request (call in progress) OR is established (has dialog/connection)
-					const isActive = hasRequest || hasDialog || hasPeerConnection;
-					
+					const isActive =
+						hasRequest || hasDialog || hasPeerConnection;
+
 					if (isActive) {
-						log('RE-REGISTER: Active call detected (currentSession exists with request/dialog/connection) - IMMEDIATELY skipping re-registration to avoid terminating call');
+						log(
+							"RE-REGISTER: Active call detected (currentSession exists with request/dialog/connection) - IMMEDIATELY skipping re-registration to avoid terminating call",
+						);
 						return;
 					} else {
 						// Session exists but appears inactive - this is a stale reference, clear it
-						log('RE-REGISTER: Found stale currentSession reference (no request/dialog/connection) - clearing and will proceed with re-registration');
+						log(
+							"RE-REGISTER: Found stale currentSession reference (no request/dialog/connection) - clearing and will proceed with re-registration",
+						);
 						currentSession = null;
 					}
 				}
-				
+
 				// Third check: If we just returned from notification tap during a call,
 				// give JavaScript state a moment to restore before checking again
 				// This is a safety net in case currentSession check above didn't catch it
-				
-				log('App brought to foreground - WebSocket may have been killed, checking if re-registration needed...');
-				
+
+				log(
+					"App brought to foreground - WebSocket may have been killed, checking if re-registration needed...",
+				);
+
 				// Clear any existing timeout
 				if (reRegisterTimeout) {
 					clearTimeout(reRegisterTimeout);
-					log('Cleared previous re-registration timeout');
+					log("Cleared previous re-registration timeout");
 				}
-				
+
 				// Debounce re-registration - only execute after 500ms of no new calls
 				reRegisterTimeout = setTimeout(async () => {
 					// Check notification flag again in debounce (might be set during delay)
 					if (window.__skipReRegisterForNotification === true) {
-						log('RE-REGISTER: Notification flag detected during debounce - skipping re-registration');
+						log(
+							"RE-REGISTER: Notification flag detected during debounce - skipping re-registration",
+						);
 						return;
 					}
-					
+
 					// Check service status - this is the most reliable check for active calls
 					// Wait for result before proceeding
 					let serviceRunning = false;
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
 						try {
-							const CallService = window.Capacitor.Plugins.CallService;
+							const CallService =
+								window.Capacitor.Plugins.CallService;
 							const result = await CallService.isServiceRunning();
 							if (result && result.isRunning === true) {
 								serviceRunning = true;
-								log('RE-REGISTER: CallForegroundService is running (active call) - skipping re-registration during debounce');
+								log(
+									"RE-REGISTER: CallForegroundService is running (active call) - skipping re-registration during debounce",
+								);
 								return;
 							}
 						} catch (err) {
-							log('Failed to check service status in debounce: ' + err.message);
+							log(
+								"Failed to check service status in debounce: " +
+									err.message,
+							);
 						}
 					}
-					
+
 					// Double-check again before executing (in case call started during debounce period)
 					if (currentSession) {
-						const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
-						const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
-						const hasPeerConnection = currentSession.sessionDescriptionHandler && 
-							currentSession.sessionDescriptionHandler.peerConnection !== null &&
-							currentSession.sessionDescriptionHandler.peerConnection !== undefined;
-						const isActive = hasRequest || hasDialog || hasPeerConnection;
-						
+						const hasRequest =
+							currentSession.request !== null &&
+							currentSession.request !== undefined;
+						const hasDialog =
+							currentSession.dialog !== null &&
+							currentSession.dialog !== undefined;
+						const hasPeerConnection =
+							currentSession.sessionDescriptionHandler &&
+							currentSession.sessionDescriptionHandler
+								.peerConnection !== null &&
+							currentSession.sessionDescriptionHandler
+								.peerConnection !== undefined;
+						const isActive =
+							hasRequest || hasDialog || hasPeerConnection;
+
 						if (isActive) {
-							log('RE-REGISTER: Active call detected during debounce (currentSession exists with request/dialog/connection) - skipping re-registration');
+							log(
+								"RE-REGISTER: Active call detected during debounce (currentSession exists with request/dialog/connection) - skipping re-registration",
+							);
 							return;
 						} else {
-							log('RE-REGISTER: Found stale currentSession during debounce - clearing and will proceed');
+							log(
+								"RE-REGISTER: Found stale currentSession during debounce - clearing and will proceed",
+							);
 							currentSession = null;
 						}
 					}
 					executeReRegister();
 				}, 500);
-				
-				log('Re-registration debounced - will execute in 500ms if no new calls');
+
+				log(
+					"Re-registration debounced - will execute in 500ms if no new calls",
+				);
 			}
-			
+
 			// Actual re-registration logic
-			function executeReRegister() {
-				log('=== EXECUTING RE-REGISTER ===');
-				
-				if (isRegistering) {
-					log('Registration already in progress - skipping re-registration');
+			async function executeReRegister() {
+				log("=== EXECUTING RE-REGISTER ===");
+
+				// If registration already in progress, skip
+				if (registrationPromise) {
+					log(
+						"Registration already in progress - skipping re-registration",
+					);
 					return;
 				}
-				
+
 				// CRITICAL: Do not re-register if there's an active call!
 				// Check currentSession - if it exists with request/dialog/peerConnection, it's active
 				// The foreground service keeps the WebSocket alive during calls,
 				// and unregistering would terminate the active call
 				if (currentSession) {
-					const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
-					const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
-					const hasPeerConnection = currentSession.sessionDescriptionHandler && 
-						currentSession.sessionDescriptionHandler.peerConnection !== null &&
-						currentSession.sessionDescriptionHandler.peerConnection !== undefined;
-					const isActive = hasRequest || hasDialog || hasPeerConnection;
-					
+					const hasRequest =
+						currentSession.request !== null &&
+						currentSession.request !== undefined;
+					const hasDialog =
+						currentSession.dialog !== null &&
+						currentSession.dialog !== undefined;
+					const hasPeerConnection =
+						currentSession.sessionDescriptionHandler &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== null &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== undefined;
+					const isActive =
+						hasRequest || hasDialog || hasPeerConnection;
+
 					if (isActive) {
-						log('Active call detected (currentSession exists with request/dialog/connection) - skipping re-registration to avoid terminating call');
+						log(
+							"Active call detected - COMPLETELY SKIPPING re-registration",
+						);
+						log(
+							"SIP.js will automatically handle registration refresh in background",
+						);
+						log("Re-registration will be deferred until call ends");
 						return;
 					} else {
-						log('Found stale currentSession reference in executeReRegister (no request/dialog/connection) - clearing and will proceed');
+						log(
+							"Found stale currentSession reference in executeReRegister (no request/dialog/connection) - clearing and will proceed",
+						);
 						currentSession = null;
 					}
 				}
-				
+
 				const username = document.getElementById("username").value;
 				const password = document.getElementById("password").value;
-				log('Credentials check - username: ' + (username ? 'present' : 'missing') + ', password: ' + (password ? 'present' : 'missing'));
-				
-				if (username && password) {
-					// Only re-register if no active call - WebSocket should still be alive during calls due to foreground service
-					log('No active call - checking if re-registration is needed...');
-					
-					// Check if we're already registered and the connection seems healthy
-					if (isRegistered && userAgent && userAgent.transport && userAgent.transport.ws) {
-						const ws = userAgent.transport.ws;
-						if (ws.readyState === WebSocket.OPEN) {
-							log('WebSocket connection appears healthy (readyState: OPEN) - skipping re-registration');
-							return;
-						} else {
-							log('WebSocket connection is not open (readyState: ' + ws.readyState + ') - will re-register');
-						}
-					}
-					
-					log('Re-registering with fresh WebSocket connection...');
-					
-					// FINAL SAFETY CHECK: Do not unregister if there's an active call!
-					// This is a critical check to prevent terminating active calls
-					if (currentSession) {
-						const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
-						const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
-						const hasPeerConnection = currentSession.sessionDescriptionHandler && 
-							currentSession.sessionDescriptionHandler.peerConnection !== null &&
-							currentSession.sessionDescriptionHandler.peerConnection !== undefined;
-						const isActive = hasRequest || hasDialog || hasPeerConnection;
-						
-						if (isActive) {
-							log('FINAL CHECK: Active call detected before unregister (request/dialog/connection) - ABORTING re-registration');
-							return;
-						} else {
-							log('FINAL CHECK: Found stale currentSession before unregister - clearing and will proceed');
-							currentSession = null;
-						}
-					}
-					
-					// Clean up any existing connection
-					if (userAgent) {
-						try {
-							userAgent.unregister();
-							log('Cleaned up old connection');
-						} catch (err) {
-							log('Error cleaning up old connection: ' + err);
-						}
-					}
+				log(
+					"Credentials check - username: " +
+						(username ? "present" : "missing") +
+						", password: " +
+						(password ? "present" : "missing"),
+				);
 
-					// FINAL SAFETY CHECK: Do not register if call started during timeout
-					setTimeout(() => {
-						if (currentSession) {
-							const hasRequest = currentSession.request !== null && currentSession.request !== undefined;
-							const hasDialog = currentSession.dialog !== null && currentSession.dialog !== undefined;
-							const hasPeerConnection = currentSession.sessionDescriptionHandler && 
-								currentSession.sessionDescriptionHandler.peerConnection !== null &&
-								currentSession.sessionDescriptionHandler.peerConnection !== undefined;
-							const isActive = hasRequest || hasDialog || hasPeerConnection;
-							
-							if (isActive) {
-								log('FINAL CHECK: Active call detected during register delay (request/dialog/connection) - ABORTING re-registration');
-								return;
-							} else {
-								log('FINAL CHECK: Found stale currentSession during register delay - clearing and will proceed');
-								currentSession = null;
-							}
-						}
-						log('Registering with fresh WebSocket connection...');
-						register();
-					}, 1000);
-				} else {
-					log('No credentials available for re-registration');
+				if (!username || !password) {
+					log("No credentials available for re-registration");
+					return;
+				}
+				// Only re-register if no active call - WebSocket should still be alive during calls due to foreground service
+				log(
+					"No active call - checking if re-registration is needed...",
+				);
+
+				// Check if we're already registered and the connection seems healthy
+				if (
+					isRegistered &&
+					userAgent &&
+					userAgent.transport &&
+					userAgent.transport.ws
+				) {
+					const ws = userAgent.transport.ws;
+					if (ws.readyState === WebSocket.OPEN) {
+						log(
+							"WebSocket connection is healthy (readyState: OPEN)",
+						);
+						log(
+							"SIP.js will automatically refresh registration - no action needed",
+						);
+						return;
+					} else {
+						log(
+							"WebSocket connection is not open (readyState: " +
+								ws.readyState +
+								") - will re-register",
+						);
+					}
+				}
+
+				log("Re-registering with fresh WebSocket connection...");
+
+				// FINAL SAFETY CHECK: Do not unregister if there's an active call!
+				// This is a critical check to prevent terminating active calls
+				if (currentSession) {
+					const hasRequest =
+						currentSession.request !== null &&
+						currentSession.request !== undefined;
+					const hasDialog =
+						currentSession.dialog !== null &&
+						currentSession.dialog !== undefined;
+					const hasPeerConnection =
+						currentSession.sessionDescriptionHandler &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== null &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== undefined;
+					const isActive =
+						hasRequest || hasDialog || hasPeerConnection;
+
+					if (isActive) {
+						log(
+							"FINAL CHECK: Active call detected before unregister (request/dialog/connection) - ABORTING re-registration",
+						);
+						return;
+					} else {
+						log(
+							"FINAL CHECK: Found stale currentSession before unregister - clearing and will proceed",
+						);
+						currentSession = null;
+					}
+				}
+
+				log("Re-registering with fresh WebSocket connection...");
+
+				// Clean up any existing connection first
+				if (userAgent) {
+					try {
+						await unregister(); // Wait for unregistration to complete
+						log("Cleaned up old connection");
+					} catch (err) {
+						log("Error cleaning up old connection: " + err);
+					}
+				}
+
+				// FINAL SAFETY CHECK: Do not register if call started during unregistration
+				if (currentSession) {
+					const hasRequest =
+						currentSession.request !== null &&
+						currentSession.request !== undefined;
+					const hasDialog =
+						currentSession.dialog !== null &&
+						currentSession.dialog !== undefined;
+					const hasPeerConnection =
+						currentSession.sessionDescriptionHandler &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== null &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection !== undefined;
+					const isActive =
+						hasRequest || hasDialog || hasPeerConnection;
+
+					if (isActive) {
+						log(
+							"FINAL CHECK: Active call detected during cleanup - ABORTING re-registration",
+						);
+						return;
+					}
+				}
+
+				// Now register with proper promise handling
+				try {
+					log("Registering with fresh WebSocket connection...");
+					await register(); // Wait for registration to complete
+					log("Re-registration completed successfully");
+				} catch (error) {
+					log("Re-registration failed: " + error.message);
 				}
 			}
 
 			// WebSocket connection monitoring
 			function setupWebSocketMonitoring() {
-				log('Setting up WebSocket connection monitoring...');
-				
+				log("Setting up WebSocket connection monitoring...");
+
 				// Monitor WebSocket connection status
 				setInterval(() => {
 					if (userAgent && isRegistered) {
 						// Check if WebSocket is still connected
 						if (userAgent.transport && userAgent.transport.ws) {
-							if (userAgent.transport.ws.readyState === WebSocket.CLOSED || 
-								userAgent.transport.ws.readyState === WebSocket.CLOSING) {
-								log('WebSocket connection lost - will re-register on next foreground');
+							if (
+								userAgent.transport.ws.readyState ===
+									WebSocket.CLOSED ||
+								userAgent.transport.ws.readyState ===
+									WebSocket.CLOSING
+							) {
+								log(
+									"WebSocket connection lost - will re-register on next foreground",
+								);
 								// Mark as not registered so re-registration will happen
 								isRegistered = false;
+								// IMPORTANT: Clear registration promise if WebSocket died
+								registrationPromise = null;
 							}
 						}
 					}
@@ -3799,13 +4432,16 @@
 			function setupBluetoothAudio() {
 				try {
 					// Create audio context for Bluetooth audio
-					bluetoothAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+					bluetoothAudioContext = new (window.AudioContext ||
+						window.webkitAudioContext)();
 					bluetoothAudioGain = bluetoothAudioContext.createGain();
-					bluetoothAudioGain.connect(bluetoothAudioContext.destination);
-					
-					log('Bluetooth audio context initialized');
+					bluetoothAudioGain.connect(
+						bluetoothAudioContext.destination,
+					);
+
+					log("Bluetooth audio context initialized");
 				} catch (error) {
-					log('Bluetooth audio setup failed: ' + error.message);
+					log("Bluetooth audio setup failed: " + error.message);
 				}
 			}
 
@@ -3813,7 +4449,7 @@
 				if (bluetoothAudioContext && bluetoothAudioGain) {
 					// Route audio through Bluetooth when available
 					bluetoothAudioGain.gain.value = 1.0;
-					log('Audio routed through Bluetooth');
+					log("Audio routed through Bluetooth");
 				}
 			}
 
@@ -3821,7 +4457,7 @@
 				if (bluetoothAudioGain) {
 					// Reduce gain when Bluetooth disconnects
 					bluetoothAudioGain.gain.value = 0.5;
-					log('Bluetooth disconnected - audio routed to speaker');
+					log("Bluetooth disconnected - audio routed to speaker");
 				}
 			}
 
@@ -3829,7 +4465,10 @@
 			function configureAudioSession() {
 				try {
 					// Request audio focus for phone calls
-					if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+					if (
+						navigator.mediaDevices &&
+						navigator.mediaDevices.getUserMedia
+					) {
 						// Set audio constraints for phone calls
 						const audioConstraints = {
 							audio: {
@@ -3838,153 +4477,203 @@
 								autoGainControl: true,
 								// Request audio focus for phone calls
 								channelCount: 1,
-								sampleRate: 8000
-							}
+								sampleRate: 8000,
+							},
 						};
-						
-						log('Audio session configured for lock screen continuity');
-						
+
+						log(
+							"Audio session configured for lock screen continuity",
+						);
+
 						// Set up visibility change handler for audio management
-						document.addEventListener('visibilitychange', function() {
-							if (currentSession && !document.hidden) {
-								// App came back to foreground - ensure audio is still working
-								log('App returned to foreground - checking audio session');
-								handleBluetoothAudio();
-							}
-						});
+						document.addEventListener(
+							"visibilitychange",
+							function () {
+								if (currentSession && !document.hidden) {
+									// App came back to foreground - ensure audio is still working
+									log(
+										"App returned to foreground - checking audio session",
+									);
+									handleBluetoothAudio();
+								}
+							},
+						);
 					}
 				} catch (error) {
-					log('Error configuring audio session: ' + error.message);
+					log("Error configuring audio session: " + error.message);
 				}
 			}
 
 			// Wake lock management for call continuity
 			let wakeLock = null;
-			
+
 			async function requestWakeLock() {
 				try {
-					if ('wakeLock' in navigator) {
-						wakeLock = await navigator.wakeLock.request('screen');
-						log('Wake lock acquired - screen will stay on during call');
-						
-						wakeLock.addEventListener('release', () => {
-							log('Wake lock released');
+					if ("wakeLock" in navigator) {
+						wakeLock = await navigator.wakeLock.request("screen");
+						log(
+							"Wake lock acquired - screen will stay on during call",
+						);
+
+						wakeLock.addEventListener("release", () => {
+							log("Wake lock released");
 						});
 					} else {
-						log('Wake lock API not supported');
+						log("Wake lock API not supported");
 					}
 				} catch (error) {
-					log('Wake lock failed: ' + error.message);
+					log("Wake lock failed: " + error.message);
 				}
 			}
-			
+
 			async function releaseWakeLock() {
 				try {
 					if (wakeLock) {
 						await wakeLock.release();
 						wakeLock = null;
-						log('Wake lock released');
+						log("Wake lock released");
 					}
 				} catch (error) {
-					log('Error releasing wake lock: ' + error.message);
+					log("Error releasing wake lock: " + error.message);
 				}
 			}
 
 			// Android foreground service management for call continuity
 			async function startCallService(callNumber) {
 				try {
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-						const CallService = window.Capacitor.Plugins.CallService;
-						await CallService.startCall({ callNumber: callNumber || '' });
-						log('Android call service started');
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
+						await CallService.startCall({
+							callNumber: callNumber || "",
+						});
+						log("Android call service started");
 					}
 				} catch (error) {
-					log('Failed to start call service: ' + error.message);
-					console.error('CallService error:', error);
+					log("Failed to start call service: " + error.message);
+					console.error("CallService error:", error);
 				}
 			}
 
 			async function stopCallService() {
 				try {
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-						const CallService = window.Capacitor.Plugins.CallService;
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
 						await CallService.stopCall();
-						log('Android call service stopped');
+						log("Android call service stopped");
 					}
 				} catch (error) {
-					log('Failed to stop call service: ' + error.message);
-					console.error('CallService error:', error);
+					log("Failed to stop call service: " + error.message);
+					console.error("CallService error:", error);
 				}
 			}
 
 			async function updateCallServiceNumber(callNumber) {
 				try {
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-						const CallService = window.Capacitor.Plugins.CallService;
-						await CallService.updateCallNumber({ callNumber: callNumber || '' });
-						log('Android call service number updated');
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
+						await CallService.updateCallNumber({
+							callNumber: callNumber || "",
+						});
+						log("Android call service number updated");
 					}
 				} catch (error) {
-					log('Failed to update call service number: ' + error.message);
+					log(
+						"Failed to update call service number: " +
+							error.message,
+					);
 				}
 			}
 
 			// Incoming call notification management
-			async function showIncomingCallNotification(callerName, callerNumber) {
+			async function showIncomingCallNotification(
+				callerName,
+				callerNumber,
+			) {
 				try {
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-						const CallService = window.Capacitor.Plugins.CallService;
-						await CallService.showIncomingCallNotification({ 
-							callerName: callerName || 'Unknown',
-							callerNumber: callerNumber || ''
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
+						await CallService.showIncomingCallNotification({
+							callerName: callerName || "Unknown",
+							callerNumber: callerNumber || "",
 						});
-						log('Incoming call notification displayed');
+						log("Incoming call notification displayed");
 					}
 				} catch (error) {
-					log('Failed to show incoming call notification: ' + error.message);
-					console.error('Notification error:', error);
+					log(
+						"Failed to show incoming call notification: " +
+							error.message,
+					);
+					console.error("Notification error:", error);
 				}
 			}
 
 			async function dismissIncomingCallNotification() {
 				try {
-					if (window.Capacitor && window.Capacitor.isNativePlatform() && 
-						window.Capacitor.Plugins && window.Capacitor.Plugins.CallService) {
-						const CallService = window.Capacitor.Plugins.CallService;
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
 						await CallService.dismissIncomingCallNotification();
-						log('Incoming call notification dismissed');
+						log("Incoming call notification dismissed");
 					}
 				} catch (error) {
-					log('Failed to dismiss incoming call notification: ' + error.message);
-					console.error('Notification error:', error);
+					log(
+						"Failed to dismiss incoming call notification: " +
+							error.message,
+					);
+					console.error("Notification error:", error);
 				}
 			}
 
 			// Handle notification actions (Answer/Decline from notification)
-			window.handleNotificationAction = function(action, data) {
-				log('Notification action received: ' + action);
-				
-				if (action === 'ANSWER_CALL') {
+			window.handleNotificationAction = function (action, data) {
+				log("Notification action received: " + action);
+
+				if (action === "ANSWER_CALL") {
 					if (incomingSession) {
 						answerCall();
 					} else {
-						log('No incoming call to answer');
+						log("No incoming call to answer");
 					}
-				} else if (action === 'DECLINE_CALL') {
+				} else if (action === "DECLINE_CALL") {
 					if (incomingSession) {
 						declineCall();
 					} else {
-						log('No incoming call to decline');
+						log("No incoming call to decline");
 					}
-				} else if (action === 'HANGUP') {
+				} else if (action === "HANGUP") {
 					if (currentSession) {
 						hangup();
 					} else {
-						log('No active call to hang up');
+						log("No active call to hang up");
 					}
 				}
 			};
@@ -3994,33 +4683,42 @@
 				try {
 					// Configure audio context for phone calls
 					if (window.AudioContext || window.webkitAudioContext) {
-						const AudioContext = window.AudioContext || window.webkitAudioContext;
+						const AudioContext =
+							window.AudioContext || window.webkitAudioContext;
 						const audioContext = new AudioContext();
-						
+
 						// Set audio context state to running
-						if (audioContext.state === 'suspended') {
+						if (audioContext.state === "suspended") {
 							audioContext.resume().then(() => {
-								log('Audio context resumed for lock screen continuity');
+								log(
+									"Audio context resumed for lock screen continuity",
+								);
 							});
 						}
-						
+
 						// Handle visibility changes for audio context
-						document.addEventListener('visibilitychange', function() {
-							if (audioContext.state === 'suspended' && currentSession) {
-								audioContext.resume().then(() => {
-									log('Audio context resumed on visibility change');
-								});
-							}
-						});
+						document.addEventListener(
+							"visibilitychange",
+							function () {
+								if (
+									audioContext.state === "suspended" &&
+									currentSession
+								) {
+									audioContext.resume().then(() => {
+										log(
+											"Audio context resumed on visibility change",
+										);
+									});
+								}
+							},
+						);
 					}
-					
-					log('Audio session setup completed');
+
+					log("Audio session setup completed");
 				} catch (error) {
-					log('Error setting up audio session: ' + error.message);
+					log("Error setting up audio session: " + error.message);
 				}
 			}
-
-
 
 			// Initialize on DOM load
 			window.addEventListener("DOMContentLoaded", async function () {
@@ -4033,56 +4731,69 @@
 					return;
 				}
 
-			document.title = `VoiceTel Phone v${APP_VERSION}`;
-			log(`VoiceTel Phone v${APP_VERSION} ready`);
+				document.title = `VoiceTel Phone v${APP_VERSION}`;
+				log(`VoiceTel Phone v${APP_VERSION} ready`);
 				log("Using local storage");
 				log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
-			// Initialize SIP server hidden field and info display
-			const sipServerEl = document.getElementById("sipServer");
-			if (sipServerEl) sipServerEl.value = SIP_SERVER;
-			log(`Server: ${SIP_DOMAIN} (${SIP_SERVER})`);
+				// Initialize SIP server hidden field and info display
+				const sipServerEl = document.getElementById("sipServer");
+				if (sipServerEl) sipServerEl.value = SIP_SERVER;
+				log(`Server: ${SIP_DOMAIN} (${SIP_SERVER})`);
 
 				// Load saved configuration
 				await Storage.loadConfig();
 
-
 				// Setup app state listeners for re-registration
-				log('=== CALLING setupAppStateListeners ===');
-				console.log('=== JAVASCRIPT IS RUNNING ===');
+				log("=== CALLING setupAppStateListeners ===");
+				console.log("=== JAVASCRIPT IS RUNNING ===");
 				setupAppStateListeners();
-				log('=== setupAppStateListeners COMPLETED ===');
-				
+				log("=== setupAppStateListeners COMPLETED ===");
+
 				// Setup audio session for lock screen continuity
 				setupAudioSession();
-				
+
 				// Setup WebSocket connection monitoring
 				setupWebSocketMonitoring();
-				
+
 				// Setup contact search functionality
 				setupContactSearch();
-				
+
 				// Auto-load contacts on startup
 				log("Auto-loading contacts on startup...");
 				loadContacts();
-				
+
 				// Ensure event log visibility is set correctly after everything is loaded
 				setTimeout(() => {
-					console.log("Final updateEventLogVisibility call after initialization");
+					console.log(
+						"Final updateEventLogVisibility call after initialization",
+					);
 					updateEventLogVisibility();
 				}, 100);
-				
+
 				// Debug: Log what's available
-				log('Window.Capacitor available: ' + (window.Capacitor ? 'Yes' : 'No'));
+				log(
+					"Window.Capacitor available: " +
+						(window.Capacitor ? "Yes" : "No"),
+				);
 				if (window.Capacitor) {
-					log('Capacitor.isNativePlatform: ' + window.Capacitor.isNativePlatform());
-					log('Capacitor.Plugins available: ' + (window.Capacitor.Plugins ? 'Yes' : 'No'));
+					log(
+						"Capacitor.isNativePlatform: " +
+							window.Capacitor.isNativePlatform(),
+					);
+					log(
+						"Capacitor.Plugins available: " +
+							(window.Capacitor.Plugins ? "Yes" : "No"),
+					);
 					if (window.Capacitor.Plugins) {
-						log('Capacitor.Plugins.App available: ' + (window.Capacitor.Plugins.App ? 'Yes' : 'No'));
+						log(
+							"Capacitor.Plugins.App available: " +
+								(window.Capacitor.Plugins.App ? "Yes" : "No"),
+						);
 					}
 				}
-				
+
 				// Duplicate listeners removed - only using the main setup above
-				
+
 				// Duplicate listeners removed - only using the main setup above
 
 				// Setup Bluetooth audio
@@ -4164,13 +4875,21 @@
 					clearTimeout(incomingCallTimeout);
 					incomingCallTimeout = null;
 				}
-				
+
 				// Clean up WebSocket event listeners
-				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+				if (
+					userAgent &&
+					userAgent.transport &&
+					userAgent.transport.ws &&
+					webSocketMessageHandler
+				) {
+					userAgent.transport.ws.removeEventListener(
+						"message",
+						webSocketMessageHandler,
+					);
 					webSocketMessageHandler = null;
 				}
-				
+
 				// Clean up SIP sessions
 				if (incomingSession) {
 					try {
@@ -4190,7 +4909,7 @@
 					} catch (e) {}
 					userAgent = null;
 				}
-				
+
 				// Reset all state
 				isRegistered = false;
 				registeredUsername = null;
