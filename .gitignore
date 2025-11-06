@@ -97,3 +97,11 @@ pids/
 !build/icons/
 !build/entitlements.mac.plist
 voicetel-release-key.keystore
+ 
+# Xcode iOS build artifacts
+ios/App/build/
+ios/App/build_device/
+
+# Optional: transient Xcode outputs (safe to ignore if present)
+ios/App/build/**/Intermediates.noindex/
+ios/App/build/**/Products/
