@@ -986,8 +986,8 @@
 			</div>
 
 			<div class="audio-container">
-				<audio id="remoteAudio" autoplay playsinline webkit-playsinline="true"></audio>
-				<audio id="localAudio" autoplay muted playsinline webkit-playsinline="true"></audio>
+				<audio id="remoteAudio" autoplay playsinline></audio>
+				<audio id="localAudio" autoplay muted playsinline></audio>
 			</div>
 		</div>
 
@@ -2923,7 +2923,6 @@
 									id="history-recording-${index}" 
 									controls 
 									playsinline
-									webkit-playsinline="true"
 									style="width: 100%; max-width: 350px; height: 32px;"
 									preload="metadata"
 								>
@@ -2982,20 +2981,32 @@
                                 const result = await VTCallService.getRecordingFileUrl({ filename: recordingFilename });
 								
                                 if (result && result.url) {
-                                    if (platform === 'ios') {
-                                        const match = result.url.match(/^data:([^;]+);base64,(.+)$/);
-                                        if (match) {
-                                            const bytes = atob(match[2]);
-                                            const arr = new Uint8Array(bytes.length);
-                                            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-                                            const blobUrl = URL.createObjectURL(new Blob([arr], { type: match[1] }));
-                                            if (audioEl._oldBlobUrl) URL.revokeObjectURL(audioEl._oldBlobUrl);
-                                            audioEl._oldBlobUrl = blobUrl;
-                                            audioEl.src = blobUrl;
-                                        } else {
-                                            audioEl.src = result.url;
+                                    // Convert data URL to blob URL for both platforms to avoid size limits
+                                    // This is more memory efficient and works better for long recordings
+                                    const match = result.url.match(/^data:([^;]+);base64,(.+)$/);
+                                    if (match) {
+                                        const mimeType = match[1];
+                                        const base64Data = match[2];
+                                        
+                                        // Decode base64 to binary
+                                        const bytes = atob(base64Data);
+                                        const arr = new Uint8Array(bytes.length);
+                                        for (let i = 0; i < bytes.length; i++) {
+                                            arr[i] = bytes.charCodeAt(i);
                                         }
+                                        
+                                        // Create blob URL (more efficient than data URLs for large files)
+                                        const blob = new Blob([arr], { type: mimeType });
+                                        const blobUrl = URL.createObjectURL(blob);
+                                        
+                                        // Clean up old blob URL if exists
+                                        if (audioEl._oldBlobUrl) {
+                                            URL.revokeObjectURL(audioEl._oldBlobUrl);
+                                        }
+                                        audioEl._oldBlobUrl = blobUrl;
+                                        audioEl.src = blobUrl;
                                     } else {
+                                        // Fallback: use URL directly if not a data URL
                                         audioEl.src = result.url;
                                     }
                                 }
