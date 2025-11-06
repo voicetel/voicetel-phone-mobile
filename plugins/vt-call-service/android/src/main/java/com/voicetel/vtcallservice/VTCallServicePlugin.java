@@ -71,9 +71,11 @@ public class VTCallServicePlugin extends Plugin {
 
     private static String guessMime(String name) {
         String lower = name.toLowerCase();
+        if (lower.endsWith(".webm")) return "audio/webm";
         if (lower.endsWith(".m4a") || lower.endsWith(".mp4")) return "audio/mp4";
         if (lower.endsWith(".mp3")) return "audio/mpeg";
         if (lower.endsWith(".wav")) return "audio/wav";
+        if (lower.endsWith(".ogg")) return "audio/ogg";
         return "application/octet-stream";
     }
 }

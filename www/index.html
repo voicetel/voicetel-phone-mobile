@@ -2978,7 +2978,9 @@
                                 // Single path: VTCallService on all platforms
                                 const { VTCallService } = window.Capacitor.Plugins;
                                 if (!VTCallService) throw new Error('VTCallService not available');
+								
                                 const result = await VTCallService.getRecordingFileUrl({ filename: recordingFilename });
+								
                                 if (result && result.url) {
                                     if (platform === 'ios') {
                                         const match = result.url.match(/^data:([^;]+);base64,(.+)$/);

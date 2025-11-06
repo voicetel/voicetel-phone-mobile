@@ -40,9 +40,11 @@ public class VTCallServicePlugin: CAPPlugin {
 
     private func guessMime(_ name: String) -> String {
         let lower = name.lowercased()
+        if lower.hasSuffix(".webm") { return "audio/webm" }
         if lower.hasSuffix(".m4a") || lower.hasSuffix(".mp4") { return "audio/mp4" }
         if lower.hasSuffix(".mp3") { return "audio/mpeg" }
         if lower.hasSuffix(".wav") { return "audio/wav" }
+        if lower.hasSuffix(".ogg") { return "audio/ogg" }
         return "application/octet-stream"
     }
 }

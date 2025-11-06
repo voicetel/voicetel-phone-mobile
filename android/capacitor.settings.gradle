@@ -12,4 +12,4 @@ include ':capacitor-filesystem'
 project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacitor/filesystem/android')
 
 include ':voicetel-vt-call-service'
-project(':voicetel-vt-call-service').projectDir = new File('../plugins/vt-call-service/android')
+project(':voicetel-vt-call-service').projectDir = new File('../node_modules/@voicetel/vt-call-service/android')
