@@ -1,7 +1,7 @@
 require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
 platform :ios, '14.0'
-use_frameworks!
+use_frameworks! :linkage => :static
 
 # workaround to avoid Xcode caching of Pods that requires
 # Product -> Clean Build Folder after new Cordova plugins installed
@@ -14,11 +14,13 @@ def capacitor_pods
   pod 'CapacitorCommunityContacts', :path => '../../node_modules/@capacitor-community/contacts'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorFilesystem', :path => '../../node_modules/@capacitor/filesystem'
+  pod 'VoicetelVtCallService', :path => '../../plugins/vt-call-service'
 end
 
 target 'App' do
   capacitor_pods
   # Add your Pods here
+  # Custom plugin pod is discovered automatically by Capacitor from node_modules
 end
 
 post_install do |installer|

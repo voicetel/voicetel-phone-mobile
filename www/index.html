@@ -5,6 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>VoiceTel Phone v3.5.5</title>
 		<link rel="icon" type="image/png" href="favicon.png" />
+
 		<style>
 			* {
 				margin: 0;
@@ -2972,49 +2973,34 @@
 						
 						try {
 							if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-								const platform = window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'unknown';
+                                const platform = window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'unknown';
 								
-								if (platform === 'ios') {
-									// iOS: Use Filesystem plugin (CallService not available on iOS)
-									const { Filesystem } = window.Capacitor.Plugins;
-									const result = await Filesystem.readFile({
-										path: `CallRecordings/${recordingFilename}`,
-										directory: 'DATA'
-									});
-									
-									if (result && result.data) {
-										// Convert base64 to Blob URL for proper audio duration detection
-										const byteCharacters = atob(result.data);
-										const byteNumbers = new Array(byteCharacters.length);
-										for (let i = 0; i < byteCharacters.length; i++) {
-											byteNumbers[i] = byteCharacters.charCodeAt(i);
-										}
-										const byteArray = new Uint8Array(byteNumbers);
-										const blob = new Blob([byteArray], { type: 'audio/mp4' });
-										const blobUrl = URL.createObjectURL(blob);
-										
-										// Clean up old blob URL
-										if (audioEl._oldBlobUrl) {
-											URL.revokeObjectURL(audioEl._oldBlobUrl);
-										}
-										audioEl._oldBlobUrl = blobUrl;
-										audioEl.src = blobUrl;
-										
-										audioEl.addEventListener('error', (e) => {
-											console.error('iOS recording playback error:', audioEl.error);
-										}, { once: true });
-									}
-								} else {
-									// Android: Use CallService plugin
-									const { CallService } = window.Capacitor.Plugins;
-									const result = await CallService.getRecordingFileUrl({
-										filename: recordingFilename
-									});
-									
-									if (result && result.url) {
-										audioEl.src = result.url;
-									}
-								}
+                                // Single path: VTCallService on all platforms
+                                const { VTCallService } = window.Capacitor.Plugins;
+                                if (!VTCallService) throw new Error('VTCallService not available');
+                                const result = await VTCallService.getRecordingFileUrl({ filename: recordingFilename });
+                                if (result && result.url) {
+                                    if (platform === 'ios') {
+                                        const match = result.url.match(/^data:([^;]+);base64,(.+)$/);
+                                        if (match) {
+                                            const bytes = atob(match[2]);
+                                            const arr = new Uint8Array(bytes.length);
+                                            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+                                            const blobUrl = URL.createObjectURL(new Blob([arr], { type: match[1] }));
+                                            if (audioEl._oldBlobUrl) URL.revokeObjectURL(audioEl._oldBlobUrl);
+                                            audioEl._oldBlobUrl = blobUrl;
+                                            audioEl.src = blobUrl;
+                                        } else {
+                                            audioEl.src = result.url;
+                                        }
+                                    } else {
+                                        audioEl.src = result.url;
+                                    }
+                                }
+								
+								audioEl.addEventListener('error', (e) => {
+									console.error('Recording playback error:', audioEl.error);
+								}, { once: true });
 							}
 						} catch (error) {
 							console.error("Error loading recording:", error);
@@ -3489,17 +3475,6 @@
 			// Re-registration function with debouncing
 			async function reRegister() {
 				log('=== RE-REGISTER FUNCTION CALLED ===');
-				// iOS: never auto re-register; avoid closing WebSocket mid-call
-				try {
-					if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
-						const platform = window.Capacitor.getPlatform();
-						if (platform === 'ios') {
-							log('RE-REGISTER: Disabled on iOS');
-							return;
-						}
-					}
-				} catch (_) {}
-
 				// If there is a pending incoming session, never re-register
 				if (incomingSession) {
 					log('RE-REGISTER: Incoming session pending - skipping');

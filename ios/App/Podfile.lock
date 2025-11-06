@@ -10,6 +10,8 @@ PODS:
     - Capacitor
     - IONFilesystemLib (~> 1.0.1)
   - IONFilesystemLib (1.0.1)
+  - VoicetelVtCallService (1.0.0):
+    - Capacitor
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -17,6 +19,7 @@ DEPENDENCIES:
   - "CapacitorCommunityContacts (from `../../node_modules/@capacitor-community/contacts`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - VoicetelVtCallService (from `../../plugins/vt-call-service`)
 
 SPEC REPOS:
   trunk:
@@ -33,6 +36,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorFilesystem:
     :path: "../../node_modules/@capacitor/filesystem"
+  VoicetelVtCallService:
+    :path: "../../plugins/vt-call-service"
 
 SPEC CHECKSUMS:
   Capacitor: 09d9ff8e9618e8c4b3cab2bbee34a17215dd2fef
@@ -41,7 +46,8 @@ SPEC CHECKSUMS:
   CapacitorCordova: bf648a636f3c153f652d312ae145fb508b6ffced
   CapacitorFilesystem: ac0a386949ed6c295a3dffa129ecd26b881ae5be
   IONFilesystemLib: 89258b8e3e85465da93127d25d7ce37f977e8a6f
+  VoicetelVtCallService: 439510b3635b63ce32f7d132bdf2c414da3b7a42
 
-PODFILE CHECKSUM: 96f0cdae64d0420035b2919830a7e7cc84e14f6e
+PODFILE CHECKSUM: a714d48e02b114994b45fa668883359f512bb2c2
 
 COCOAPODS: 1.16.2

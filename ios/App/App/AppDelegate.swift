@@ -2,6 +2,7 @@ import UIKit
 import Capacitor
 import AVFoundation
 import UserNotifications
+import VoicetelVtCallService
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -9,6 +10,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // App launch setup
         // Configure audio session for background audio (voice calls)
         do {
             let audioSession = AVAudioSession.sharedInstance()
@@ -36,6 +38,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 				print("Notification authorization granted: \(granted)")
 			}
         }
+        
         return true
     }
 
