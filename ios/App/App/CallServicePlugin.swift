@@ -2,15 +2,41 @@ import Foundation
 import Capacitor
 import AVFoundation
 import UserNotifications
+import CallKit
 import os
 
 @objc(CallServicePlugin)
-public class CallServicePlugin: CAPPlugin {
+public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     private var isCallActive: Bool = false
     private var currentCallNumber: String = ""
     private let incomingCallNotificationId = "INCOMING_CALL_NOTIFICATION"
     private let incomingCallCategoryId = "INCOMING_CALL"
     private let logger = Logger(subsystem: "com.voicetel.phone", category: "CallService")
+    
+    // CallKit components
+    private var callProvider: CXProvider?
+    private var callController: CXCallController?
+    private var currentCallUUID: UUID?
+    
+    override public func load() {
+        super.load()
+        setupCallKit()
+    }
+    
+    private func setupCallKit() {
+        let configuration = CXProviderConfiguration(localizedName: "VoiceTel Phone")
+        configuration.supportsVideo = false
+        configuration.maximumCallsPerCallGroup = 1
+        configuration.supportedHandleTypes = [.phoneNumber]
+        configuration.iconTemplateImageData = nil
+        configuration.ringtoneSound = "default"
+        
+        callProvider = CXProvider(configuration: configuration)
+        callProvider?.setDelegate(self, queue: nil)
+        callController = CXCallController()
+        
+        logger.debug("CallKit initialized")
+    }
 
     @objc public func startCall(_ call: CAPPluginCall) {
         self.currentCallNumber = call.getString("callNumber") ?? ""
@@ -28,6 +54,20 @@ public class CallServicePlugin: CAPPlugin {
     }
 
     @objc public func stopCall(_ call: CAPPluginCall) {
+        // End CallKit call if active
+        if let callUUID = currentCallUUID {
+            let endCallAction = CXEndCallAction(call: callUUID)
+            let transaction = CXTransaction(action: endCallAction)
+            
+            callController?.request(transaction) { error in
+                if let error = error {
+                    self.logger.error("stopCall: CallKit end failed: \(error.localizedDescription)")
+                }
+            }
+            
+            currentCallUUID = nil
+        }
+        
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setActive(false, options: .notifyOthersOnDeactivation)
@@ -56,38 +96,96 @@ public class CallServicePlugin: CAPPlugin {
         let callerNumber = call.getString("callerNumber") ?? ""
         logger.info("showIncomingCallNotification: name=\(callerName, privacy: .public) number=\(callerNumber, privacy: .public)")
 
-        let content = UNMutableNotificationContent()
-        content.title = "Incoming Call"
-        content.body = callerName.isEmpty ? callerNumber : "\(callerName)\n\(callerNumber)"
-        if #available(iOS 12.0, *) {
-            content.sound = UNNotificationSound.defaultCriticalSound(withAudioVolume: 1.0)
-        } else {
-            content.sound = .default
-        }
-        content.categoryIdentifier = incomingCallCategoryId
-        if #available(iOS 15.0, *) {
-            content.interruptionLevel = .critical
-        }
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
-        let request = UNNotificationRequest(identifier: incomingCallNotificationId, content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
+        // Use CallKit to show native iOS call interface (like Android's full-screen notification)
+        let callUUID = UUID()
+        currentCallUUID = callUUID
+        
+        let handle = CXHandle(type: .phoneNumber, value: callerNumber)
+        let callUpdate = CXCallUpdate()
+        callUpdate.remoteHandle = handle
+        callUpdate.localizedCallerName = callerName.isEmpty ? callerNumber : callerName
+        callUpdate.hasVideo = false
+        
+        callProvider?.reportNewIncomingCall(with: callUUID, update: callUpdate) { error in
             if let error = error {
                 self.logger.error("showIncomingCallNotification failed: \(error.localizedDescription)")
-                call.reject("Failed to show notification: \(error.localizedDescription)")
+                call.reject("Failed to show call: \(error.localizedDescription)")
             } else {
-                self.logger.debug("showIncomingCallNotification: scheduled")
+                self.logger.debug("showIncomingCallNotification: CallKit call reported")
                 call.resolve(["success": true])
             }
         }
     }
 
     @objc public func dismissIncomingCallNotification(_ call: CAPPluginCall) {
+        // End the CallKit call
+        if let callUUID = currentCallUUID {
+            let endCallAction = CXEndCallAction(call: callUUID)
+            let transaction = CXTransaction(action: endCallAction)
+            
+            callController?.request(transaction) { error in
+                if let error = error {
+                    self.logger.error("dismissIncomingCallNotification failed: \(error.localizedDescription)")
+                } else {
+                    self.logger.debug("dismissIncomingCallNotification: call ended")
+                }
+            }
+            
+            currentCallUUID = nil
+        }
+        
+        // Also remove any regular notifications as fallback
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [incomingCallNotificationId])
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [incomingCallNotificationId])
-        logger.debug("dismissIncomingCallNotification")
+        
         call.resolve(["success": true])
+    }
+    
+    // MARK: - CXProviderDelegate
+    
+    public func providerDidReset(_ provider: CXProvider) {
+        logger.debug("CallKit provider did reset")
+        currentCallUUID = nil
+    }
+    
+    public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
+        logger.info("CallKit: Answer call action")
+        
+        // Notify JavaScript to answer the call
+        notifyBridge(action: "ANSWER_CALL")
+        
+        action.fulfill()
+    }
+    
+    public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
+        logger.info("CallKit: End call action")
+        
+        // Notify JavaScript to decline/end the call
+        if currentCallUUID == action.callUUID {
+            notifyBridge(action: "DECLINE_CALL")
+        }
+        
+        currentCallUUID = nil
+        action.fulfill()
+    }
+    
+    public func provider(_ provider: CXProvider, perform action: CXSetHeldCallAction) {
+        logger.debug("CallKit: Set held call action")
+        action.fulfill()
+    }
+    
+    public func provider(_ provider: CXProvider, perform action: CXSetMutedCallAction) {
+        logger.debug("CallKit: Set muted call action")
+        action.fulfill()
+    }
+    
+    private func notifyBridge(action: String) {
+        DispatchQueue.main.async {
+            if let bridge = self.bridge {
+                let js = "if (typeof window !== 'undefined' && typeof window.handleNotificationAction === 'function') { window.handleNotificationAction('\(action)', null); } else { console.log('handleNotificationAction not available, action: \(action)'); }"
+                bridge.webView?.evaluateJavaScript(js, completionHandler: nil)
+            }
+        }
     }
 
     @objc public func saveRecording(_ call: CAPPluginCall) {
