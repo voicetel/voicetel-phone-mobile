@@ -141,6 +141,28 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         call.resolve(["success": true])
     }
     
+    @objc public func reportCallConnected(_ call: CAPPluginCall) {
+        // Report that the call has been connected (answered)
+        // This stops CallKit's ringtone by fulfilling an answer action
+        if let callUUID = currentCallUUID {
+            let answerAction = CXAnswerCallAction(call: callUUID)
+            let transaction = CXTransaction(action: answerAction)
+            
+            callController?.request(transaction) { error in
+                if let error = error {
+                    self.logger.error("reportCallConnected failed: \(error.localizedDescription)")
+                    call.reject("Failed to report call connected: \(error.localizedDescription)")
+                } else {
+                    self.logger.debug("reportCallConnected: CallKit call answered")
+                    call.resolve(["success": true])
+                }
+            }
+        } else {
+            logger.debug("reportCallConnected: No active call UUID")
+            call.resolve(["success": false, "message": "No active call"])
+        }
+    }
+    
     // MARK: - CXProviderDelegate
     
     public func providerDidReset(_ provider: CXProvider) {
@@ -154,6 +176,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         // Notify JavaScript to answer the call
         notifyBridge(action: "ANSWER_CALL")
         
+        // Fulfill the action - this automatically stops CallKit's ringtone
         action.fulfill()
     }
     

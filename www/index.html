@@ -2094,8 +2094,11 @@
 					incomingCallTimeout = null;
 				}
 
-				// Dismiss incoming call notification
-				dismissIncomingCallNotification();
+				// Report call as connected to stop CallKit ringtone
+				// Don't await - fire and forget to avoid blocking
+				reportCallConnected().catch((err) => {
+					console.error("Error reporting call connected:", err);
+				});
 
 				// Transfer session to current and mark as answered
 				currentSession = incomingSession;
@@ -4647,6 +4650,37 @@
 				} catch (error) {
 					log(
 						"Failed to dismiss incoming call notification: " +
+							error.message,
+					);
+					console.error("Notification error:", error);
+				}
+			}
+
+			async function reportCallConnected() {
+				try {
+					if (
+						window.Capacitor &&
+						window.Capacitor.isNativePlatform() &&
+						window.Capacitor.Plugins &&
+						window.Capacitor.Plugins.CallService
+					) {
+						const CallService =
+							window.Capacitor.Plugins.CallService;
+						// iOS: reportCallConnected stops CallKit ringtone
+						// Android: dismissIncomingCallNotification stops notification vibration
+						if (CallService.reportCallConnected) {
+							// iOS - report call as connected to stop CallKit ringtone
+							await CallService.reportCallConnected();
+							log("Call reported as connected to CallKit");
+						} else {
+							// Android - dismiss notification to stop vibration/ringing
+							await CallService.dismissIncomingCallNotification();
+							log("Incoming call notification dismissed (Android)");
+						}
+					}
+				} catch (error) {
+					log(
+						"Failed to report call connected: " +
 							error.message,
 					);
 					console.error("Notification error:", error);
