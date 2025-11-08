@@ -2375,46 +2375,87 @@
 					document.getElementById("callNumber").focus();
 					startCallTimer();
 
-					try {
-						const pc =
-							session.sessionDescriptionHandler.peerConnection;
-						const remoteStream = new MediaStream();
-						pc.getReceivers().forEach((receiver) => {
-							if (receiver.track) {
-								remoteStream.addTrack(receiver.track);
-							}
-						});
+					// On iOS, wait for CallKit audio session activation before playing audio
+					const isIOS = window.Capacitor?.getPlatform() === 'ios';
+					if (isIOS && !callKitAudioSessionActive) {
+						log("⏳ [CallKit] Waiting for audio session activation...");
+						pendingAudioStart = true;
+					} else {
+						try {
+							const pc =
+								session.sessionDescriptionHandler.peerConnection;
+							const remoteStream = new MediaStream();
+							pc.getReceivers().forEach((receiver) => {
+								if (receiver.track) {
+									remoteStream.addTrack(receiver.track);
+								}
+							});
 
-						const remoteAudio =
-							document.getElementById("remoteAudio");
-						remoteAudio.srcObject = remoteStream;
-						remoteAudio.volume = 1.0;
-					} catch (e) {
-						log("Error setting up audio: " + e.message);
+							const remoteAudio =
+								document.getElementById("remoteAudio");
+							remoteAudio.srcObject = remoteStream;
+							remoteAudio.volume = 1.0;
+							remoteAudio.muted = false;
+							remoteAudio.play().catch((err) => {
+								log("Error playing remote audio: " + err.message);
+							});
+						} catch (e) {
+							log("Error setting up audio: " + e.message);
+						}
 					}
 				});
 
 				session.on("trackAdded", () => {
-					try {
-						const pc =
-							session.sessionDescriptionHandler.peerConnection;
-						const remoteStream = new MediaStream();
-						pc.getReceivers().forEach((receiver) => {
-							if (receiver.track) {
-								remoteStream.addTrack(receiver.track);
-							}
-						});
+					const isIOS = window.Capacitor?.getPlatform() === 'ios';
+					
+					// Early media muting while ringing (desktop parity)
+					if (ringingStarted) {
+						try {
+							const pc =
+								session.sessionDescriptionHandler.peerConnection;
+							const remoteStream = new MediaStream();
+							pc.getReceivers().forEach((receiver) => {
+								if (receiver.track) {
+									remoteStream.addTrack(receiver.track);
+								}
+							});
 
-						const remoteAudio =
-							document.getElementById("remoteAudio");
-						remoteAudio.srcObject = remoteStream;
-						// Early media muting while ringing (desktop parity)
-						if (remoteAudio && ringingStarted) {
+							const remoteAudio =
+								document.getElementById("remoteAudio");
+							remoteAudio.srcObject = remoteStream;
 							remoteAudio.volume = 0;
 							log("Early media audio track muted");
+						} catch (e) {
+							log("Error handling early media track: " + e.message);
 						}
-					} catch (e) {
-						log("Error handling track: " + e.message);
+					} else if (activeCall) {
+						// Call is active - ensure audio is playing
+						if (isIOS && !callKitAudioSessionActive) {
+							log("⏳ [CallKit] Waiting for audio session activation in trackAdded...");
+							pendingAudioStart = true;
+						} else {
+							try {
+								const pc =
+									session.sessionDescriptionHandler.peerConnection;
+								const remoteStream = new MediaStream();
+								pc.getReceivers().forEach((receiver) => {
+									if (receiver.track) {
+										remoteStream.addTrack(receiver.track);
+									}
+								});
+
+								const remoteAudio =
+									document.getElementById("remoteAudio");
+								remoteAudio.srcObject = remoteStream;
+								remoteAudio.volume = 1.0;
+								remoteAudio.muted = false;
+								remoteAudio.play().catch((err) => {
+									log("Error playing remote audio in trackAdded: " + err.message);
+								});
+							} catch (e) {
+								log("Error handling track: " + e.message);
+							}
+						}
 					}
 				});
 			}
@@ -4610,24 +4651,38 @@
 				callerName,
 				callerNumber,
 			) {
+				log(`[CallKit] showIncomingCallNotification called: name=${callerName}, number=${callerNumber}`);
 				try {
 					if (
 						window.Capacitor &&
 						window.Capacitor.isNativePlatform() &&
-						window.Capacitor.Plugins &&
-						window.Capacitor.Plugins.CallService
+						window.Capacitor.Plugins
 					) {
+						log(`[CallKit] Checking for plugins...`);
+						log(`[CallKit] VTCallService exists: ${!!window.Capacitor.Plugins.VTCallService}`);
+						log(`[CallKit] CallService exists: ${!!window.Capacitor.Plugins.CallService}`);
+						
+						// Try VTCallService first (iOS), then CallService (Android)
 						const CallService =
+							window.Capacitor.Plugins.VTCallService ||
 							window.Capacitor.Plugins.CallService;
-						await CallService.showIncomingCallNotification({
-							callerName: callerName || "Unknown",
-							callerNumber: callerNumber || "",
-						});
-						log("Incoming call notification displayed");
+						
+						if (CallService) {
+							log(`[CallKit] Plugin found, calling showIncomingCallNotification...`);
+							await CallService.showIncomingCallNotification({
+								callerName: callerName || "Unknown",
+								callerNumber: callerNumber || "",
+							});
+							log("✅ [CallKit] Incoming call notification displayed");
+						} else {
+							log("⚠️ [CallKit] No CallService plugin available");
+						}
+					} else {
+						log("⚠️ [CallKit] Not native platform or Capacitor not available");
 					}
 				} catch (error) {
 					log(
-						"Failed to show incoming call notification: " +
+						"❌ [CallKit] Failed to show incoming call notification: " +
 							error.message,
 					);
 					console.error("Notification error:", error);
@@ -4639,13 +4694,16 @@
 					if (
 						window.Capacitor &&
 						window.Capacitor.isNativePlatform() &&
-						window.Capacitor.Plugins &&
-						window.Capacitor.Plugins.CallService
+						window.Capacitor.Plugins
 					) {
+						// Try VTCallService first (iOS), then CallService (Android)
 						const CallService =
+							window.Capacitor.Plugins.VTCallService ||
 							window.Capacitor.Plugins.CallService;
-						await CallService.dismissIncomingCallNotification();
-						log("Incoming call notification dismissed");
+						if (CallService) {
+							await CallService.dismissIncomingCallNotification();
+							log("Incoming call notification dismissed");
+						}
 					}
 				} catch (error) {
 					log(
@@ -4661,21 +4719,24 @@
 					if (
 						window.Capacitor &&
 						window.Capacitor.isNativePlatform() &&
-						window.Capacitor.Plugins &&
-						window.Capacitor.Plugins.CallService
+						window.Capacitor.Plugins
 					) {
+						// Try VTCallService first (iOS), then CallService (Android)
 						const CallService =
+							window.Capacitor.Plugins.VTCallService ||
 							window.Capacitor.Plugins.CallService;
-						// iOS: reportCallConnected stops CallKit ringtone
-						// Android: dismissIncomingCallNotification stops notification vibration
-						if (CallService.reportCallConnected) {
-							// iOS - report call as connected to stop CallKit ringtone
-							await CallService.reportCallConnected();
-							log("Call reported as connected to CallKit");
-						} else {
-							// Android - dismiss notification to stop vibration/ringing
-							await CallService.dismissIncomingCallNotification();
-							log("Incoming call notification dismissed (Android)");
+						if (CallService) {
+							// iOS: reportCallConnected stops CallKit ringtone
+							// Android: dismissIncomingCallNotification stops notification vibration
+							if (CallService.reportCallConnected) {
+								// iOS - report call as connected to stop CallKit ringtone
+								await CallService.reportCallConnected();
+								log("Call reported as connected to CallKit");
+							} else {
+								// Android - dismiss notification to stop vibration/ringing
+								await CallService.dismissIncomingCallNotification();
+								log("Incoming call notification dismissed (Android)");
+							}
 						}
 					}
 				} catch (error) {
@@ -4684,6 +4745,48 @@
 							error.message,
 					);
 					console.error("Notification error:", error);
+				}
+			}
+
+			// Track CallKit audio session state (iOS only)
+			let callKitAudioSessionActive = false;
+			let pendingAudioStart = false;
+
+			// Function to start WebRTC audio playback
+			function startWebRTCAudio() {
+				if (!currentSession || !activeCall) {
+					return;
+				}
+
+				try {
+					const pc = currentSession.sessionDescriptionHandler.peerConnection;
+					if (!pc) {
+						return;
+					}
+
+					const remoteStream = new MediaStream();
+					pc.getReceivers().forEach((receiver) => {
+						if (receiver.track) {
+							remoteStream.addTrack(receiver.track);
+						}
+					});
+
+					const remoteAudio = document.getElementById("remoteAudio");
+					if (!remoteAudio) {
+						return;
+					}
+
+					remoteAudio.srcObject = remoteStream;
+					remoteAudio.volume = 1.0;
+					remoteAudio.muted = false;
+
+					remoteAudio.play().then(() => {
+						log("✅ [CallKit] Remote audio playing successfully");
+					}).catch((err) => {
+						log("❌ [CallKit] Error playing remote audio: " + err.message);
+					});
+				} catch (e) {
+					log("❌ [CallKit] Error starting WebRTC audio: " + e.message);
 				}
 			}
 
@@ -4709,6 +4812,16 @@
 					} else {
 						log("No active call to hang up");
 					}
+				} else if (action === "AUDIO_SESSION_ACTIVATED") {
+					log("✅ [CallKit] Audio session activated");
+					callKitAudioSessionActive = true;
+					if (pendingAudioStart || (currentSession && activeCall)) {
+						pendingAudioStart = false;
+						startWebRTCAudio();
+					}
+				} else if (action === "AUDIO_SESSION_DEACTIVATED") {
+					log("ℹ️ [CallKit] Audio session deactivated");
+					callKitAudioSessionActive = false;
 				}
 			};
 

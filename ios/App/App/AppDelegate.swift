@@ -2,7 +2,6 @@ import UIKit
 import Capacitor
 import AVFoundation
 import UserNotifications
-import VoicetelVtCallService
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
