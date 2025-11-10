@@ -49,10 +49,12 @@ window.__incomingDisplay = null;
 // Contacts list
 window.contactsList = [];
 
-// Audio session state (iOS)
+// Audio session state (iOS only)
 window.callKitAudioSessionActive = false;
 window.pendingAudioStart = false;
 window.audioStarted = false;
+window.__answeringInProgress = false; // iOS only: prevents infinite answer loop
+window.__callKitAnswered = false; // iOS only: tracks if CallKit triggered answer
 
 // Wake lock
 window.wakeLock = null;

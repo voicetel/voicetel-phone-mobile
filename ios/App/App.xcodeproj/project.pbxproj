@@ -18,6 +18,10 @@
 		SCENEDELEGATE_BUILD /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCENEDELEGATE_FILE /* SceneDelegate.swift */; };
 		CSP002BUILD000000000000001 /* CallServicePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSP001SWIFT00000000000001 /* CallServicePlugin.swift */; };
 		CSP004BUILD000000000000002 /* CallServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = CSP003OBJC0000000000000001 /* CallServicePlugin.m */; };
+		VIEWCTRL001BUILD00000000001 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = VIEWCTRL001REF000000000001 /* ViewController.swift */; };
+		CALLKIT_FRAMEWORK_BUILD /* CallKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CALLKIT_FRAMEWORK_REF /* CallKit.framework */; };
+		AVFOUND_FRAMEWORK_BUILD /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AVFOUND_FRAMEWORK_REF /* AVFoundation.framework */; };
+		USERNOT_FRAMEWORK_BUILD /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = USERNOT_FRAMEWORK_REF /* UserNotifications.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +41,10 @@
 		SCENEDELEGATE_FILE /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		CSP001SWIFT00000000000001 /* CallServicePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallServicePlugin.swift; sourceTree = "<group>"; };
 		CSP003OBJC0000000000000001 /* CallServicePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CallServicePlugin.m; sourceTree = "<group>"; };
+		VIEWCTRL001REF000000000001 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		CALLKIT_FRAMEWORK_REF /* CallKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CallKit.framework; path = System/Library/Frameworks/CallKit.framework; sourceTree = SDKROOT; };
+		AVFOUND_FRAMEWORK_REF /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		USERNOT_FRAMEWORK_REF /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,6 +53,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				BA8E2B5FEA0CC83D8472579D /* Pods_App.framework in Frameworks */,
+				CALLKIT_FRAMEWORK_BUILD /* CallKit.framework in Frameworks */,
+				AVFOUND_FRAMEWORK_BUILD /* AVFoundation.framework in Frameworks */,
+				USERNOT_FRAMEWORK_BUILD /* UserNotifications.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +88,7 @@
 				CSP003OBJC0000000000000001 /* CallServicePlugin.m */,
 504EC3071FED79650016851F /* AppDelegate.swift */,
 				SCENEDELEGATE_FILE /* SceneDelegate.swift */,
+				VIEWCTRL001REF000000000001 /* ViewController.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -102,6 +114,9 @@
 			isa = PBXGroup;
 			children = (
 				A9F4BD4887A5042D17EA1883 /* Pods_App.framework */,
+				CALLKIT_FRAMEWORK_REF /* CallKit.framework */,
+				AVFOUND_FRAMEWORK_REF /* AVFoundation.framework */,
+				USERNOT_FRAMEWORK_REF /* UserNotifications.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -243,6 +258,7 @@
 				CSP004BUILD000000000000002 /* CallServicePlugin.m in Sources */,
 504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				SCENEDELEGATE_BUILD /* SceneDelegate.swift in Sources */,
+				VIEWCTRL001BUILD00000000001 /* ViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

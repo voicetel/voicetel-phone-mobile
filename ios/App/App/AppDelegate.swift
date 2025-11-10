@@ -10,18 +10,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // App launch setup
-        // Configure audio session for background audio (voice calls)
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
-                options: [.allowBluetoothHFP, .allowBluetoothA2DP, .mixWithOthers, .duckOthers, .defaultToSpeaker]
-            )
-            try audioSession.setActive(true)
-        } catch {
-            print("AVAudioSession setup failed: \(error)")
-        }
+        // Note: Audio session is now managed by CallKit, not initialized here
+        // This prevents conflicts with CallKit's audio session management
 
 		// Configure notifications for incoming call actions
 		let center = UNUserNotificationCenter.current()
@@ -37,7 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 				print("Notification authorization granted: \(granted)")
 			}
         }
-        
+
         return true
     }
 
