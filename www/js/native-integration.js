@@ -2,7 +2,7 @@
 // NATIVE INTEGRATION MODULE
 // ========================================
 
-window.startCallService = async function(callNumber) {
+window.startCallService = async function (callNumber) {
 	try {
 		if (
 			window.Capacitor &&
@@ -20,9 +20,9 @@ window.startCallService = async function(callNumber) {
 		window.log("Failed to start call service: " + error.message);
 		console.error("CallService error:", error);
 	}
-}
+};
 
-window.stopCallService = async function() {
+window.stopCallService = async function () {
 	try {
 		if (
 			window.Capacitor &&
@@ -38,9 +38,9 @@ window.stopCallService = async function() {
 		window.log("Failed to stop call service: " + error.message);
 		console.error("CallService error:", error);
 	}
-}
+};
 
-window.updateCallServiceNumber = async function(callNumber) {
+window.updateCallServiceNumber = async function (callNumber) {
 	try {
 		if (
 			window.Capacitor &&
@@ -57,9 +57,12 @@ window.updateCallServiceNumber = async function(callNumber) {
 	} catch (error) {
 		window.log("Failed to update call service number: " + error.message);
 	}
-}
+};
 
-window.showIncomingCallNotification = async function(callerName, callerNumber) {
+window.showIncomingCallNotification = async function (
+	callerName,
+	callerNumber,
+) {
 	window.log(
 		`[CallKit] showIncomingCallNotification called: name=${callerName}, number=${callerNumber}`,
 	);
@@ -71,18 +74,14 @@ window.showIncomingCallNotification = async function(callerName, callerNumber) {
 		) {
 			window.log(`[CallKit] Checking for plugins...`);
 			window.log(
-				`[CallKit] VTCallService exists: ${!!window.Capacitor.Plugins.VTCallService}`,
+				`[CallKit] CallService exists: ${!!window.Capacitor.Plugins.CallService}`,
 			);
 			window.log(
 				`[CallKit] CallService exists: ${!!window.Capacitor.Plugins.CallService}`,
 			);
 
-			// iOS uses VTCallService, Android uses CallService
-			const platform = window.Capacitor.getPlatform();
-			const CallService =
-				platform === "ios"
-					? window.Capacitor.Plugins.VTCallService
-					: window.Capacitor.Plugins.CallService;
+			// Use CallService on all platforms
+			const CallService = window.Capacitor.Plugins.CallService;
 
 			if (CallService) {
 				window.log(
@@ -97,51 +96,49 @@ window.showIncomingCallNotification = async function(callerName, callerNumber) {
 				window.log("⚠️ [CallKit] No CallService plugin available");
 			}
 		} else {
-			window.log("⚠️ [CallKit] Not native platform or Capacitor not available");
+			window.log(
+				"⚠️ [CallKit] Not native platform or Capacitor not available",
+			);
 		}
 	} catch (error) {
-		window.log("Failed to show incoming call notification: " + error.message);
+		window.log(
+			"Failed to show incoming call notification: " + error.message,
+		);
 		console.error("Notification error:", error);
 	}
-}
+};
 
-window.dismissIncomingCallNotification = async function() {
+window.dismissIncomingCallNotification = async function () {
 	try {
 		if (
 			window.Capacitor &&
 			window.Capacitor.isNativePlatform() &&
 			window.Capacitor.Plugins
 		) {
-			// iOS uses VTCallService, Android uses CallService
-			const platform = window.Capacitor.getPlatform();
-			const CallService =
-				platform === "ios"
-					? window.Capacitor.Plugins.VTCallService
-					: window.Capacitor.Plugins.CallService;
+			// Use CallService on all platforms
+			const CallService = window.Capacitor.Plugins.CallService;
 			if (CallService) {
 				await CallService.dismissIncomingCallNotification();
 				window.log("Incoming call notification dismissed");
 			}
 		}
 	} catch (error) {
-		window.log("Failed to dismiss incoming call notification: " + error.message);
+		window.log(
+			"Failed to dismiss incoming call notification: " + error.message,
+		);
 		console.error("Notification error:", error);
 	}
-}
+};
 
-window.reportCallConnected = async function() {
+window.reportCallConnected = async function () {
 	try {
 		if (
 			window.Capacitor &&
 			window.Capacitor.isNativePlatform() &&
 			window.Capacitor.Plugins
 		) {
-			// iOS uses VTCallService, Android uses CallService
-			const platform = window.Capacitor.getPlatform();
-			const CallService =
-				platform === "ios"
-					? window.Capacitor.Plugins.VTCallService
-					: window.Capacitor.Plugins.CallService;
+			// Use CallService on all platforms
+			const CallService = window.Capacitor.Plugins.CallService;
 			if (CallService) {
 				// iOS: reportCallConnected stops CallKit ringtone
 				// Android: dismissIncomingCallNotification stops notification vibration
@@ -152,7 +149,9 @@ window.reportCallConnected = async function() {
 				} else {
 					// Android - dismiss notification to stop vibration/ringing
 					await CallService.dismissIncomingCallNotification();
-					window.log("Incoming call notification dismissed (Android)");
+					window.log(
+						"Incoming call notification dismissed (Android)",
+					);
 				}
 			}
 		}
@@ -160,14 +159,16 @@ window.reportCallConnected = async function() {
 		window.log("Failed to report call connected: " + error.message);
 		console.error("Notification error:", error);
 	}
-}
+};
 
-window.setupAppStateListeners = function() {
+window.setupAppStateListeners = function () {
 	window.log("Setting up app state listeners...");
 
 	// Always set up visibility change listener as primary method
 	document.addEventListener("visibilitychange", async function () {
-		window.log("Visibility change detected - document.hidden: " + document.hidden);
+		window.log(
+			"Visibility change detected - document.hidden: " + document.hidden,
+		);
 		if (!document.hidden) {
 			window.log(
 				"App brought to foreground (visibility) - WebSocket may have been killed, checking if re-registration needed...",
@@ -185,7 +186,9 @@ window.setupAppStateListeners = function() {
 	// Try to set up Capacitor listeners if available (only once)
 	setTimeout(() => {
 		if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-			window.log("Capacitor detected - setting up native app state listeners");
+			window.log(
+				"Capacitor detected - setting up native app state listeners",
+			);
 
 			// Try to access Capacitor App API
 			if (window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
@@ -208,10 +211,12 @@ window.setupAppStateListeners = function() {
 				window.log("Capacitor App plugin not available");
 			}
 		} else {
-			window.log("Not running on native platform - using visibility API only");
+			window.log(
+				"Not running on native platform - using visibility API only",
+			);
 		}
 	}, 2000);
-}
+};
 
 /**
  * Handle notification actions (Answer/Decline from notification)

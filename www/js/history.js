@@ -135,12 +135,12 @@ window.renderCallHistory = async function () {
 					) {
 						const platform = getPlatform();
 
-						// Single path: VTCallService on all platforms
-						const { VTCallService } = window.Capacitor.Plugins;
-						if (!VTCallService)
-							throw new Error("VTCallService not available");
+						// Single path: CallService on all platforms
+						const { CallService } = window.Capacitor.Plugins;
+						if (!CallService)
+							throw new Error("CallService not available");
 
-						const result = await VTCallService.getRecordingFileUrl({
+						const result = await CallService.getRecordingFileUrl({
 							filename: recordingFilename,
 						});
 
