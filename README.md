@@ -11,6 +11,7 @@ A mobile WebRTC SIP phone built with Capacitor for VoiceTel communications (Andr
 - [Features](#-features)
 - [Installation](#-installation)
 - [Screenshots](#-screenshots)
+- [API Documentation](#-api-documentation)
 - [Privacy](#-privacy)
 - [Contributors](#-contributors)
 - [Sponsors](#-sponsors)
@@ -116,6 +117,20 @@ open ios/App/App.xcworkspace
   <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/android_contacts.png" alt="Android — Contacts" width="240" />
   <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/android_settings.png" alt="Android — Settings" width="240" />
 </p>
+
+## 📖 API Documentation
+
+For developers looking to understand or extend the codebase, comprehensive API documentation is available:
+
+**[JavaScript API Documentation](API.md)** - Complete reference for all functions, modules, and architecture
+
+The API documentation includes:
+- Architecture overview and module loading system
+- Detailed function references for all 16 JavaScript modules
+- Parameter descriptions and return types
+- Usage examples and best practices
+- Platform-specific considerations
+- Troubleshooting guide
 
 ## 🔒 Privacy
 

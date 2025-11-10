@@ -1,0 +1,541 @@
+/* VoiceTel Phone Mobile - Main Stylesheet */
+/* Base styles and resets */
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	overflow-x: hidden;
+	width: 100%;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		Oxygen, Ubuntu, sans-serif;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	min-height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 20px;
+	overflow-x: hidden;
+	width: 100%;
+	position: relative;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Container */
+
+.container {
+	background: white;
+	border-radius: 20px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	max-width: 500px;
+	width: 100%;
+	overflow: hidden;
+	position: relative;
+	margin: 0 auto;
+}
+
+/* Header */
+
+.header {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	padding: 30px;
+	text-align: left;
+	position: relative;
+}
+
+.header h1 {
+	font-size: 28px;
+	margin-bottom: 10px;
+}
+
+.status {
+	display: inline-block;
+	padding: 5px 15px;
+	border-radius: 20px;
+	background: rgba(255, 255, 255, 0.2);
+	font-size: 14px;
+	margin-top: 10px;
+}
+
+.status.registered {
+	background: rgba(76, 175, 80, 0.3);
+}
+
+.header-buttons {
+	position: absolute;
+	top: 20px;
+	right: 20px;
+	display: flex;
+	gap: 8px;
+}
+
+.header-toggle {
+	background: rgba(255, 255, 255, 0.2);
+	border: none;
+	color: white;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	transition: all 0.3s;
+}
+
+.header-toggle:hover {
+	background: rgba(255, 255, 255, 0.3);
+	transform: rotate(90deg);
+}
+
+.header-toggle.active {
+	background: rgba(255, 255, 255, 0.4);
+}
+
+/* Content */
+
+.content {
+	padding: 30px;
+	overflow-x: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.section {
+	margin-bottom: 25px;
+	overflow-x: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.section.config-section {
+	max-height: 0;
+	overflow: hidden;
+	transition:
+		max-height 0.4s ease-out,
+		margin-bottom 0.4s ease-out;
+	margin-bottom: 0;
+}
+
+.section.config-section.visible {
+	max-height: 1000px;
+	margin-bottom: 25px;
+}
+
+.section.log-section {
+	max-height: 0;
+	overflow: hidden;
+	transition:
+		max-height 0.4s ease-out,
+		margin-bottom 0.4s ease-out;
+	margin-bottom: 0;
+}
+
+.section.log-section.visible {
+	max-height: 800px;
+	margin-bottom: 25px;
+}
+
+#historySection.visible {
+	margin-bottom: 25px;
+}
+
+#historySection .log {
+	padding: 20px;
+	max-height: 400px;
+	border-radius: 12px;
+	overflow-y: auto;
+}
+
+.history-actions,
+.contacts-actions {
+	display: flex;
+	gap: 10px;
+	margin-top: 12px;
+	padding: 0;
+	width: calc(100% - 40px);
+	margin-left: 20px;
+	margin-right: 20px;
+	box-sizing: border-box;
+	overflow-x: hidden;
+	flex-wrap: wrap;
+}
+
+.history-actions button,
+.contacts-actions button {
+	flex: 1 1 auto;
+	min-width: 0;
+	max-width: 100%;
+}
+
+#contactsSection .log {
+	padding: 20px;
+	max-height: 400px;
+	border-radius: 12px;
+	overflow-y: auto;
+}
+
+.contact-item {
+	padding: 16px 20px;
+	border-bottom: 1px solid #f0f0f0;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: white;
+}
+
+.contact-item:hover {
+	background-color: #f8f9fa;
+	transform: translateX(2px);
+}
+
+.contact-item:last-child {
+	border-bottom: none;
+}
+
+.contact-item:active {
+	background-color: #e9ecef;
+}
+
+#historySection .log-entry {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+	padding: 10px 12px;
+	margin-bottom: 8px;
+	background: #fff;
+	border-radius: 8px;
+}
+
+.section.hideable {
+	display: block;
+	transition: opacity 0.3s ease-out;
+}
+
+.section.hideable.hidden {
+	display: none;
+}
+
+.section h2 {
+	font-size: 18px;
+	color: #333;
+	margin-bottom: 15px;
+	padding-bottom: 8px;
+	border-bottom: 2px solid #f0f0f0;
+}
+
+/* Forms */
+
+.form-group {
+	margin-bottom: 15px;
+}
+
+.form-group label {
+	display: block;
+	margin-bottom: 5px;
+	color: #666;
+	font-size: 14px;
+}
+
+.form-group label small {
+	font-weight: normal;
+	display: block;
+	margin-top: 2px;
+}
+
+.form-group input[type="checkbox"] {
+	width: auto;
+	margin-right: 8px;
+}
+
+.form-group input {
+	width: 100%;
+	padding: 10px;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	font-size: 14px;
+	transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+	outline: none;
+	border-color: #667eea;
+}
+
+/* Buttons */
+
+.button-group {
+	display: flex;
+	gap: 10px;
+	margin-top: 15px;
+	overflow-x: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+button {
+	flex: 1;
+	padding: 12px 20px;
+	border: none;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.3s;
+}
+
+.btn-primary {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+}
+
+.btn-primary:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+	background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+	color: white;
+}
+
+.btn-danger {
+	background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+	color: white;
+}
+
+.btn-secondary {
+	background: #f0f0f0;
+	color: #333;
+}
+
+.btn-secondary.recording {
+	background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+	color: white;
+	animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Call Controls */
+
+.call-controls {
+	display: none;
+	text-align: center;
+	padding: 20px;
+	background: #f8f8f8;
+	border-radius: 12px;
+	margin-top: 20px;
+	overflow-x: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.call-controls.active {
+	display: block;
+}
+
+.call-info {
+	font-size: 16px;
+	color: #666;
+	margin-bottom: 15px;
+	overflow-x: hidden;
+	word-wrap: break-word;
+}
+
+/* Dialpad */
+
+.dialpad {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	max-width: 250px;
+	margin: 20px auto;
+}
+
+.dialpad button {
+	aspect-ratio: 1;
+	font-size: 20px;
+	background: white;
+	border: 2px solid #e0e0e0;
+	color: #333;
+}
+
+.dialpad button:hover {
+	background: #f0f0f0;
+	transform: none;
+	box-shadow: none;
+}
+
+.dialpad-layer {
+	background: white;
+	border-radius: 12px;
+	padding: 20px;
+	margin: 20px 0;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	display: block;
+	overflow-x: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.show-dialpad-button {
+	text-align: center;
+	margin-top: 15px;
+}
+
+.show-dialpad-button button {
+	width: 100%;
+	max-width: 200px;
+}
+
+#callNumber {
+	text-align: center;
+	font-size: 18px;
+	margin-bottom: 10px;
+	font-family: monospace;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow-x: hidden;
+}
+
+/* Log */
+
+.log {
+	background: #f8f8f8;
+	border-radius: 8px;
+	padding: 15px;
+	max-height: 400px;
+	overflow-y: auto;
+	font-family: monospace;
+	font-size: 12px;
+	color: #666;
+}
+
+.log-entry {
+	margin-bottom: 5px;
+	padding: 5px;
+	background: white;
+	border-radius: 4px;
+}
+
+/* Audio */
+
+.audio-container {
+	display: none;
+}
+
+/* Incoming Call */
+
+.incoming-call {
+	display: none;
+	background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+	color: white;
+	padding: 20px;
+	border-radius: 12px;
+	margin-bottom: 20px;
+	animation: pulse 1.5s infinite;
+	overflow-x: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.incoming-call.active {
+	display: block;
+}
+
+.incoming-caller {
+	font-size: 20px;
+	font-weight: bold;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+.incoming-number {
+	font-size: 16px;
+	margin-bottom: 15px;
+	text-align: center;
+	opacity: 0.9;
+}
+
+.incoming-buttons {
+	display: flex;
+	gap: 10px;
+}
+
+.btn-answer {
+	background: white;
+	color: #4caf50;
+	flex: 1;
+}
+
+.btn-answer:hover {
+	background: #f0f0f0;
+}
+
+.btn-decline {
+	background: rgba(255, 255, 255, 0.2);
+	color: white;
+	flex: 1;
+}
+
+.btn-decline:hover {
+	background: rgba(255, 255, 255, 0.3);
+}
+
+/* Storage Info */
+
+.storage-info {
+	background: #e3f2fd;
+	border: 1px solid #90caf9;
+	border-radius: 8px;
+	padding: 10px;
+	margin-top: 10px;
+	font-size: 12px;
+	color: #1976d2;
+}
+
+/* History */
+
+.history-call {
+	color: #667eea;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.history-call:hover {
+	text-decoration: underline;
+}
+
+/* Ringing Indicator */
+
+#ringingIndicator {
+	display: none;
+	font-size: 18px;
+	color: #667eea;
+	margin: 10px 0;
+}
