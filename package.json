@@ -25,7 +25,6 @@
 		"@capacitor/android": "^7.4.4",
 		"@capacitor/app": "^7.1.0",
 		"@capacitor/cli": "^7.4.4",
-		"@capacitor/filesystem": "^7.1.4",
-		"@voicetel/vt-call-service": "file:plugins/vt-call-service"
+		"@capacitor/filesystem": "^7.1.4"
 	}
 }

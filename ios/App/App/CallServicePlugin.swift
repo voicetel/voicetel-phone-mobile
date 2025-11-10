@@ -12,17 +12,17 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     private let incomingCallNotificationId = "INCOMING_CALL_NOTIFICATION"
     private let incomingCallCategoryId = "INCOMING_CALL"
     private let logger = Logger(subsystem: "com.voicetel.phone", category: "CallService")
-    
+
     // CallKit components
     private var callProvider: CXProvider?
     private var callController: CXCallController?
     private var currentCallUUID: UUID?
-    
+
     override public func load() {
         super.load()
         setupCallKit()
     }
-    
+
     private func setupCallKit() {
         let configuration = CXProviderConfiguration(localizedName: "VoiceTel Phone")
         configuration.supportsVideo = false
@@ -30,11 +30,11 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         configuration.supportedHandleTypes = [.phoneNumber]
         configuration.iconTemplateImageData = nil
         configuration.ringtoneSound = "default"
-        
+
         callProvider = CXProvider(configuration: configuration)
         callProvider?.setDelegate(self, queue: nil)
         callController = CXCallController()
-        
+
         logger.debug("CallKit initialized")
     }
 
@@ -58,16 +58,16 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         if let callUUID = currentCallUUID {
             let endCallAction = CXEndCallAction(call: callUUID)
             let transaction = CXTransaction(action: endCallAction)
-            
+
             callController?.request(transaction) { error in
                 if let error = error {
                     self.logger.error("stopCall: CallKit end failed: \(error.localizedDescription)")
                 }
             }
-            
+
             currentCallUUID = nil
         }
-        
+
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setActive(false, options: .notifyOthersOnDeactivation)
@@ -99,13 +99,13 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         // Use CallKit to show native iOS call interface (like Android's full-screen notification)
         let callUUID = UUID()
         currentCallUUID = callUUID
-        
+
         let handle = CXHandle(type: .phoneNumber, value: callerNumber)
         let callUpdate = CXCallUpdate()
         callUpdate.remoteHandle = handle
         callUpdate.localizedCallerName = callerName.isEmpty ? callerNumber : callerName
         callUpdate.hasVideo = false
-        
+
         callProvider?.reportNewIncomingCall(with: callUUID, update: callUpdate) { error in
             if let error = error {
                 self.logger.error("showIncomingCallNotification failed: \(error.localizedDescription)")
@@ -122,7 +122,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         if let callUUID = currentCallUUID {
             let endCallAction = CXEndCallAction(call: callUUID)
             let transaction = CXTransaction(action: endCallAction)
-            
+
             callController?.request(transaction) { error in
                 if let error = error {
                     self.logger.error("dismissIncomingCallNotification failed: \(error.localizedDescription)")
@@ -130,24 +130,24 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
                     self.logger.debug("dismissIncomingCallNotification: call ended")
                 }
             }
-            
+
             currentCallUUID = nil
         }
-        
+
         // Also remove any regular notifications as fallback
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [incomingCallNotificationId])
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [incomingCallNotificationId])
-        
+
         call.resolve(["success": true])
     }
-    
+
     @objc public func reportCallConnected(_ call: CAPPluginCall) {
         // Report that the call has been connected (answered)
         // This stops CallKit's ringtone by fulfilling an answer action
         if let callUUID = currentCallUUID {
             let answerAction = CXAnswerCallAction(call: callUUID)
             let transaction = CXTransaction(action: answerAction)
-            
+
             callController?.request(transaction) { error in
                 if let error = error {
                     self.logger.error("reportCallConnected failed: \(error.localizedDescription)")
@@ -162,46 +162,66 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
             call.resolve(["success": false, "message": "No active call"])
         }
     }
-    
+
     // MARK: - CXProviderDelegate
-    
+
     public func providerDidReset(_ provider: CXProvider) {
         logger.debug("CallKit provider did reset")
         currentCallUUID = nil
     }
-    
+
     public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         logger.info("CallKit: Answer call action")
-        
+
         // Notify JavaScript to answer the call
         notifyBridge(action: "ANSWER_CALL")
-        
+
         // Fulfill the action - this automatically stops CallKit's ringtone
         action.fulfill()
     }
-    
+
     public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         logger.info("CallKit: End call action")
-        
+
         // Notify JavaScript to decline/end the call
         if currentCallUUID == action.callUUID {
             notifyBridge(action: "DECLINE_CALL")
         }
-        
+
         currentCallUUID = nil
         action.fulfill()
     }
-    
+
     public func provider(_ provider: CXProvider, perform action: CXSetHeldCallAction) {
         logger.debug("CallKit: Set held call action")
         action.fulfill()
     }
-    
+
     public func provider(_ provider: CXProvider, perform action: CXSetMutedCallAction) {
         logger.debug("CallKit: Set muted call action")
         action.fulfill()
     }
-    
+
+    public func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
+        logger.info("CallKit audio session activated")
+
+        // Configure audio session for VoIP calls
+        do {
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP, .allowBluetoothA2DP, .defaultToSpeaker])
+            logger.info("Audio session configured for voice chat")
+
+            // Notify JavaScript that audio session is ready
+            notifyBridge(action: "AUDIO_SESSION_ACTIVATED")
+        } catch {
+            logger.error("Failed to configure audio session: \(error.localizedDescription)")
+        }
+    }
+
+    public func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
+        logger.info("CallKit audio session deactivated")
+        notifyBridge(action: "AUDIO_SESSION_DEACTIVATED")
+    }
+
     private func notifyBridge(action: String) {
         DispatchQueue.main.async {
             if let bridge = self.bridge {
@@ -366,5 +386,3 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         throw NSError(domain: "CallServicePlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "Recording file not found: \(filename)"])
     }
 }
-
-

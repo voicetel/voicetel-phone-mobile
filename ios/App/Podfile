@@ -14,7 +14,6 @@ def capacitor_pods
   pod 'CapacitorCommunityContacts', :path => '../../node_modules/@capacitor-community/contacts'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorFilesystem', :path => '../../node_modules/@capacitor/filesystem'
-  pod 'VoicetelVtCallService', :path => '../../node_modules/@voicetel/vt-call-service'
 end
 
 target 'App' do

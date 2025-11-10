@@ -142,6 +142,7 @@ window.reportCallConnected = async function () {
 			if (CallService) {
 				// iOS: reportCallConnected stops CallKit ringtone
 				// Android: dismissIncomingCallNotification stops notification vibration
+				const platform = window.getPlatform();
 				if (platform === "ios" && CallService.reportCallConnected) {
 					// iOS - report call as connected to stop CallKit ringtone
 					await CallService.reportCallConnected();

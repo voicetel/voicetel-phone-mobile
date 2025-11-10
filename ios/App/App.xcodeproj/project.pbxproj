@@ -16,6 +16,8 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		BA8E2B5FEA0CC83D8472579D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9F4BD4887A5042D17EA1883 /* Pods_App.framework */; };
 		SCENEDELEGATE_BUILD /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCENEDELEGATE_FILE /* SceneDelegate.swift */; };
+		CSP002BUILD000000000000001 /* CallServicePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSP001SWIFT00000000000001 /* CallServicePlugin.swift */; };
+		CSP004BUILD000000000000002 /* CallServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = CSP003OBJC0000000000000001 /* CallServicePlugin.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +35,8 @@
 		7F29E4DB0A8E8332C48A3297 /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 		A9F4BD4887A5042D17EA1883 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		SCENEDELEGATE_FILE /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		CSP001SWIFT00000000000001 /* CallServicePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallServicePlugin.swift; sourceTree = "<group>"; };
+		CSP003OBJC0000000000000001 /* CallServicePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CallServicePlugin.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,7 +73,9 @@
 			isa = PBXGroup;
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
-				504EC3071FED79650016851F /* AppDelegate.swift */,
+								CSP001SWIFT00000000000001 /* CallServicePlugin.swift */,
+				CSP003OBJC0000000000000001 /* CallServicePlugin.m */,
+504EC3071FED79650016851F /* AppDelegate.swift */,
 				SCENEDELEGATE_FILE /* SceneDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -233,7 +239,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+								CSP002BUILD000000000000001 /* CallServicePlugin.swift in Sources */,
+				CSP004BUILD000000000000002 /* CallServicePlugin.m in Sources */,
+504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				SCENEDELEGATE_BUILD /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
