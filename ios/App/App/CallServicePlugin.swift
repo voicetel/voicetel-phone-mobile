@@ -77,6 +77,8 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     @objc public func stopCall(_ call: CAPPluginCall) {
+        logger.error("stopCall called - currentCallUUID: \(self.currentCallUUID?.uuidString ?? "nil"), audioSessionActivated: \(self.audioSessionActivated)")
+
         // End CallKit call if active
         if let callUUID = currentCallUUID {
             let endCallAction = CXEndCallAction(call: callUUID)
@@ -86,29 +88,41 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
                 if let error = error {
                     self.logger.error("stopCall: CallKit end failed: \(error.localizedDescription)")
                 } else {
-                    self.logger.error("stopCall: CallKit call ended")
+                    self.logger.error("stopCall: CallKit call ended successfully")
                 }
             }
 
             currentCallUUID = nil
             self.isCallActive = false
 
-            // Don't deactivate audio session - CallKit will handle it
-            logger.info("stopCall: CallKit handling audio session deactivation")
+            // Don't deactivate audio session - CallKit will handle it via didDeactivate
+            logger.error("stopCall: CallKit will handle audio session deactivation")
             call.resolve(["success": true])
             return
         }
 
         // Only deactivate audio session if CallKit is not managing it
+        // AND if audio session was actually activated by us
+        if !audioSessionActivated {
+            logger.error("stopCall: No active audio session to deactivate")
+            self.isCallActive = false
+            call.resolve(["success": true])
+            return
+        }
+
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setActive(false, options: .notifyOthersOnDeactivation)
             self.isCallActive = false
-            logger.info("stopCall: deactivated audio session (no CallKit)")
+            audioSessionActivated = false
+            logger.error("stopCall: deactivated audio session (no CallKit)")
             call.resolve(["success": true])
         } catch {
-            logger.error("stopCall failed: \(error.localizedDescription)")
-            call.reject("Failed to stop call: \(error.localizedDescription)")
+            self.logger.error("stopCall: audio deactivation failed: \(error.localizedDescription)")
+            // Don't reject - call is stopped even if audio session cleanup fails
+            self.isCallActive = false
+            audioSessionActivated = false
+            call.resolve(["success": true])
         }
     }
 
@@ -288,10 +302,15 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
                 logger.error("   Declining incoming call (DECLINE)")
                 notifyBridge(action: "DECLINE_CALL")
             }
+
+            currentCallUUID = nil
+            self.isCallActive = false
         }
 
-        currentCallUUID = nil
         action.fulfill()
+
+        // Audio session will be deactivated in didDeactivate callback
+        logger.error("   CallKit will handle audio session cleanup via didDeactivate")
     }
 
     public func provider(_ provider: CXProvider, perform action: CXSetHeldCallAction) {
