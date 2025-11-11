@@ -88,16 +88,12 @@ window.makeCall = async function () {
       options.extraHeaders.push("Privacy: none");
     }
 
-    // iOS: Start CallKit outgoing call BEFORE making SIP call
     if (isIOS && window.Capacitor?.Plugins?.CallService) {
       try {
-        window.log("📱 [iOS] Starting CallKit outgoing call...");
         await window.Capacitor.Plugins.CallService.startOutgoingCall({
           callNumber: number,
         });
-        window.log("✅ [iOS] CallKit outgoing call started");
       } catch (err) {
-        window.log("⚠️ [iOS] Failed to start CallKit call: " + err.message);
         // Continue anyway - fallback to non-CallKit
       }
     }
@@ -325,9 +321,7 @@ window.answerCall = async function () {
 
   const isIOS = window.Capacitor?.getPlatform() === "ios";
 
-  // iOS only: Prevent infinite loop - if already answering, don't answer again
   if (isIOS && window.__answeringInProgress) {
-    window.log("⚠️ [iOS] Answer already in progress, skipping duplicate");
     return;
   }
 
@@ -340,43 +334,21 @@ window.answerCall = async function () {
     window.incomingCallTimeout = null;
   }
 
-  // Stop ringing audio and visual indicator
   window.stopRinging();
 
-  // On iOS, tell CallKit to answer the call (if user pressed in-app button)
-  // This will trigger CallKit's answer action which will activate audio session
-
   if (isIOS) {
-    // Check if this is being called from CallKit or from in-app button
-    // If CallKit already answered, audio session should be activating soon
-    // If in-app button, we need to tell CallKit to answer
     const calledFromCallKit =
       window.callKitAudioSessionActive || window.__callKitAnswered;
 
     if (!calledFromCallKit) {
-      window.log("📱 iOS: In-app answer - notifying CallKit...");
-
-      // Report the call as connected to CallKit
-      // This will trigger the audio session activation
       try {
         if (window.Capacitor?.Plugins?.CallService) {
           await window.Capacitor.Plugins.CallService.reportCallConnected();
-          window.log("✅ CallKit notified of answer");
         }
       } catch (err) {
-        window.log("⚠️ Failed to notify CallKit: " + err.message);
+        // Failed to notify CallKit
       }
-    } else {
-      window.log("📱 iOS: CallKit already answering, skipping notification");
     }
-
-    window.log("📱 iOS: Checking CallKit audio session status...");
-    window.log(
-      `   Current callKitAudioSessionActive: ${window.callKitAudioSessionActive}`,
-    );
-
-    // Wait for CallKit to activate audio session
-    // Give it up to 3 seconds to activate (increased from 2s)
     let audioReady = window.callKitAudioSessionActive;
     const maxWait = 3000;
     const startTime = Date.now();
@@ -386,22 +358,9 @@ window.answerCall = async function () {
       checkCount++;
       if (window.callKitAudioSessionActive) {
         audioReady = true;
-        const waitTime = Date.now() - startTime;
-        window.log(
-          `✅ CallKit audio session is active after ${waitTime}ms (${checkCount} checks) - ready to accept SIP call`,
-        );
         break;
       }
-      // Wait 50ms before checking again
       await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-
-    if (!audioReady) {
-      const totalWait = Date.now() - startTime;
-      window.log(
-        `⚠️ Audio session not activated within ${totalWait}ms after ${checkCount} checks`,
-      );
-      window.log("⚠️ Proceeding anyway - audio may not work initially");
     }
   } else {
     // Android - report call connected to stop notification ringtone
@@ -410,9 +369,8 @@ window.answerCall = async function () {
     });
   }
 
-  // Transfer session to current and mark as answered
   window.currentSession = incomingSession;
-  window.incomingSession = null; // Clear incoming reference IMMEDIATELY
+  window.incomingSession = null;
   window.__callDirection = "incoming";
   window.__answeredIncoming = true;
   window.activeCall = true;
@@ -420,13 +378,10 @@ window.answerCall = async function () {
   window.hideIncomingCallUI();
   window.setupSessionHandlers(window.currentSession);
 
-  window.log("📞 Accepting SIP call now that audio is ready...");
   currentSession.accept();
   window.showCallControls();
   window.log("Call answered");
   window.log("SIP/2.0 200 OK");
-
-  // iOS only: Clear the answering flag after a short delay to allow for any race conditions
   if (isIOS) {
     setTimeout(() => {
       window.__answeringInProgress = false;
@@ -445,14 +400,11 @@ window.declineCall = async function () {
     window.incomingCallTimeout = null;
   }
 
-  // Stop ringing
   window.stopRinging();
 
-  // iOS only: Dismiss incoming call notification (and end CallKit call)
   const isIOS = window.Capacitor?.getPlatform() === "ios";
   if (isIOS) {
     await dismissIncomingCallNotification();
-    window.log("✅ [iOS] CallKit call ended");
   }
 
   // Record as declined (this is correct for a manual press)
@@ -464,16 +416,12 @@ window.declineCall = async function () {
         "Unknown";
   window.Storage.addCallToHistory("declined", num, "00:00");
 
-  // mark this specific incoming session as manually declined
   incomingSession.__declinedByUser = true;
 
-  // Send busy
-  window.log("Sending SIP 486 Busy Here response...");
   incomingSession.reject({
     statusCode: 486,
     reasonPhrase: "Busy Here",
   });
-  window.log("SIP reject(486) called on incomingSession");
 
   window.hideIncomingCallUI();
   window.log("Call declined");
@@ -627,11 +575,10 @@ window.setupSessionHandlers = function (session) {
       "Type or press dialpad for DTMF";
     document.getElementById("callNumber").focus();
     startCallTimer();
+    document.getElementById("callStatus").textContent = "Call in progress";
 
-    // On iOS, wait for CallKit audio session activation before playing audio
     const isIOS = window.Capacitor?.getPlatform() === "ios";
     if (isIOS && !callKitAudioSessionActive) {
-      window.log("⏳ [CallKit] Waiting for audio session activation...");
       window.pendingAudioStart = true;
     } else {
       try {

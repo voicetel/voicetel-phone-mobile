@@ -237,83 +237,51 @@ window.handleNotificationAction = function (action, data) {
       window.log("No active call to hang up");
     }
   } else if (action === "AUDIO_SESSION_ACTIVATED") {
-    window.log("✅ [CallKit] Audio session activated");
     window.callKitAudioSessionActive = true;
 
-    // CRITICAL: Enable iosrtc audio now that CallKit has activated the session
     if (window.iosrtc) {
-      window.log("🔊 [CallKit] Enabling iosrtc audio device...");
-
-      // Notify iosrtc that AVAudioSession was activated by CallKit
       if (window.iosrtc.audioSessionDidActivate) {
         window.iosrtc.audioSessionDidActivate();
-        window.log("✅ [CallKit] Notified iosrtc audio session activated");
       }
-
-      // Enable audio in iosrtc
       if (window.iosrtc.isAudioEnabled !== undefined) {
         window.iosrtc.isAudioEnabled = true;
-        window.log("✅ [CallKit] iosrtc audio enabled");
       }
     }
 
-    // Now refresh the microphone track
     if (window.currentSession && window.activeCall) {
-      window.log(
-        "🎤 [CallKit] Refreshing microphone track after audio session activation...",
-      );
-
-      // Use async wrapper to handle the promise
       (async () => {
         try {
-          const success = await window.refreshMicrophoneTrack();
-          if (success) {
-            window.log(
-              "✅ [CallKit] Microphone track refreshed - audio should now work!",
-            );
-          } else {
-            window.log("⚠️ [CallKit] Failed to refresh microphone track");
-          }
+          await window.refreshMicrophoneTrack();
         } catch (error) {
-          window.log(
-            "❌ [CallKit] Error during microphone refresh: " + error.message,
-          );
+          // Error during microphone refresh
         }
 
-        // Now try to start audio
         window.tryStartWebRTCAudio();
 
-        // If audio didn't start yet (session not ready), retry after a short delay
         if (
           !window.audioStarted &&
           window.currentSession &&
           window.activeCall
         ) {
-          window.log("🔄 [CallKit] Retrying audio start in 200ms...");
           setTimeout(() => {
             if (
               !window.audioStarted &&
               window.currentSession &&
               window.activeCall
             ) {
-              window.log("🔄 [CallKit] Second attempt to start audio...");
               window.tryStartWebRTCAudio();
             }
           }, 200);
 
-          // Final retry after 500ms if still not started
           setTimeout(() => {
             if (
               !window.audioStarted &&
               window.currentSession &&
               window.activeCall
             ) {
-              window.log("🔄 [CallKit] Final attempt to start audio...");
               window.tryStartWebRTCAudio();
 
-              // If still not working, try to manually setup audio
               if (!window.audioStarted) {
-                window.log("⚠️ [CallKit] Forcing audio setup...");
                 try {
                   const pc =
                     window.currentSession.sessionDescriptionHandler
@@ -331,69 +299,41 @@ window.handleNotificationAction = function (action, data) {
                       remoteAudio.srcObject = remoteStream;
                       remoteAudio.volume = 1.0;
                       remoteAudio.muted = false;
-                      remoteAudio
-                        .play()
-                        .then(() => {
-                          window.log(
-                            "✅ [CallKit] Forced audio setup successful",
-                          );
-                          window.audioStarted = true;
-                        })
-                        .catch((err) => {
-                          window.log(
-                            "❌ [CallKit] Forced audio play failed: " +
-                              err.message,
-                          );
-                        });
+                      remoteAudio.play().then(() => {
+                        window.audioStarted = true;
+                      });
                     }
                   }
                 } catch (e) {
-                  window.log(
-                    "❌ [CallKit] Error forcing audio setup: " + e.message,
-                  );
+                  // Error forcing audio setup
                 }
               }
             }
           }, 500);
         }
       })();
-    } else {
-      window.log("⚠️ [CallKit] No active session/call to refresh microphone");
     }
   } else if (action === "AUDIO_SESSION_DEACTIVATED") {
-    window.log("ℹ️ [CallKit] Audio session deactivated");
     window.callKitAudioSessionActive = false;
 
-    // Notify iosrtc that audio session was deactivated
     if (window.iosrtc) {
-      window.log("🔇 [CallKit] Disabling iosrtc audio device...");
-
       if (window.iosrtc.audioSessionDidDeactivate) {
         window.iosrtc.audioSessionDidDeactivate();
-        window.log("✅ [CallKit] Notified iosrtc audio session deactivated");
       }
-
       if (window.iosrtc.isAudioEnabled !== undefined) {
         window.iosrtc.isAudioEnabled = false;
-        window.log("✅ [CallKit] iosrtc audio disabled");
       }
     }
 
-    // Stop the local audio track if it exists
     if (window.localAudioTrack) {
       window.localAudioTrack.stop();
       window.localAudioTrack = null;
-      window.log("🔇 [CallKit] Local audio track stopped");
     }
   } else if (action === "MUTE_CALL") {
-    window.log("🔇 [CallKit] Mute button pressed in CallKit");
-    // Update in-app mute state to match CallKit
     if (!window.isMuted) {
       window.toggleMute();
     }
   } else if (action === "UNMUTE_CALL") {
-    window.log("🔊 [CallKit] Unmute button pressed in CallKit");
-    // Update in-app mute state to match CallKit
     if (window.isMuted) {
       window.toggleMute();
     }

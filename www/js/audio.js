@@ -178,32 +178,15 @@ window.tryStartWebRTCAudio = async function () {
     return;
   }
 
-  // On iOS with CallKit, wait for audio session to be activated by CallKit
   if (window.isIOS && window.callKitAudioSessionActive === false) {
-    window.log(
-      "⏸️ [CallKit] Waiting for audio session to be activated by CallKit",
-    );
     window.pendingAudioStart = true;
     return;
   }
 
-  // All conditions met - start audio
-  window.log("🎵 Starting WebRTC audio...");
   startWebRTCAudio();
 
-  // On iOS with CallKit, refresh the microphone track after audio session is active
   if (window.isIOS && window.callKitAudioSessionActive) {
-    window.log(
-      "🎤 [CallKit] Audio session is active, refreshing microphone track...",
-    );
-    const success = await window.refreshMicrophoneTrack();
-    if (success) {
-      window.log("✅ [CallKit] Microphone track refreshed successfully");
-    } else {
-      window.log(
-        "⚠️ [CallKit] Failed to refresh microphone track, but continuing...",
-      );
-    }
+    await window.refreshMicrophoneTrack();
   }
 
   window.audioStarted = true;
@@ -251,24 +234,16 @@ window.startWebRTCAudio = function () {
 };
 
 window.refreshMicrophoneTrack = async function () {
-  window.log(
-    "🎤 [CallKit] Refreshing microphone track after audio session activation...",
-  );
-
   if (!window.currentSession || !window.activeCall) {
-    window.log("⚠️ [CallKit] No active session to refresh microphone");
     return false;
   }
 
   try {
     const pc = window.currentSession.sessionDescriptionHandler.peerConnection;
     if (!pc) {
-      window.log("⚠️ [CallKit] No peer connection available");
       return false;
     }
 
-    // Get a fresh microphone track now that CallKit has activated the audio session
-    window.log("🎤 [CallKit] Requesting fresh microphone access...");
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -280,16 +255,8 @@ window.refreshMicrophoneTrack = async function () {
 
     const audioTrack = stream.getAudioTracks()[0];
     if (!audioTrack) {
-      window.log("❌ [CallKit] No audio track in fresh stream");
       return false;
     }
-
-    window.log(
-      "✅ [CallKit] Fresh microphone track obtained: " + audioTrack.label,
-    );
-    window.log("   Track enabled: " + audioTrack.enabled);
-    window.log("   Track readyState: " + audioTrack.readyState);
-    window.log("   Track muted: " + audioTrack.muted);
 
     // Find the audio sender and replace the track
     const senders = pc.getSenders();
@@ -302,60 +269,22 @@ window.refreshMicrophoneTrack = async function () {
     }
 
     if (audioSender) {
-      window.log("🔄 [CallKit] Replacing old audio track with fresh one...");
-
-      // Stop old track first
       if (window.localAudioTrack) {
         window.localAudioTrack.stop();
-        window.log("🔇 [CallKit] Stopped old audio track");
       }
 
       await audioSender.replaceTrack(audioTrack);
-      window.log("✅ [CallKit] Audio track replaced successfully");
-
-      // CRITICAL: Ensure the track is enabled and unmuted
       audioTrack.enabled = true;
-      window.log("   Track enabled: " + audioTrack.enabled);
-      window.log("   Track readyState: " + audioTrack.readyState);
-      window.log("   Track muted: " + audioTrack.muted);
-
-      // Store reference to stop it later
       window.localAudioTrack = audioTrack;
-
-      // Verify the sender is using the new track
-      if (audioSender.track) {
-        window.log("   Sender track ID: " + audioSender.track.id);
-        window.log("   Sender track enabled: " + audioSender.track.enabled);
-      }
-
-      window.log(
-        "✅ [CallKit] Microphone track is now active and sending audio",
-      );
 
       return true;
     } else {
-      window.log("⚠️ [CallKit] No audio sender found, adding track...");
-
-      // If there's no sender, add the track
       audioTrack.enabled = true;
       pc.addTrack(audioTrack, stream);
       window.localAudioTrack = audioTrack;
-      window.log("✅ [CallKit] Audio track added to peer connection");
-      window.log("   Track enabled: " + audioTrack.enabled);
-      window.log("   Track ID: " + audioTrack.id);
-
       return true;
     }
   } catch (error) {
-    window.log(
-      "❌ [CallKit] Error refreshing microphone track: " + error.message,
-    );
-    window.log("   Error name: " + error.name);
-    if (error.name === "NotAllowedError") {
-      window.log("   Microphone permission denied!");
-    } else if (error.name === "NotFoundError") {
-      window.log("   No microphone device found!");
-    }
     return false;
   }
 };

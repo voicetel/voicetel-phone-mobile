@@ -128,10 +128,8 @@ window.endCall = async function () {
   window.__answeredIncoming = false;
   window.activeCall = false;
 
-  // Reset audio flags for next call
   window.audioStarted = false;
 
-  // iOS only: Reset CallKit-specific flags and cleanup audio track
   const isIOSEndCall = window.Capacitor?.getPlatform() === "ios";
   if (isIOSEndCall) {
     window.callKitAudioSessionActive = false;
@@ -139,13 +137,11 @@ window.endCall = async function () {
     window.__answeringInProgress = false;
     window.__callKitAnswered = false;
 
-    // Stop and cleanup local audio track
     if (window.localAudioTrack) {
       try {
         window.localAudioTrack.stop();
-        window.log("🔇 [CallKit] Local audio track stopped and cleaned up");
       } catch (e) {
-        window.log("⚠️ [CallKit] Error stopping audio track: " + e.message);
+        // Error stopping audio track
       }
       window.localAudioTrack = null;
     }
