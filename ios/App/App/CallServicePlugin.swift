@@ -29,7 +29,12 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     private func setupCallKit() {
-        let configuration = CXProviderConfiguration(localizedName: "VoiceTel Phone")
+        let configuration: CXProviderConfiguration
+        if #available(iOS 14.0, *) {
+            configuration = CXProviderConfiguration()
+        } else {
+            configuration = CXProviderConfiguration(localizedName: "VoiceTel Phone")
+        }
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
         configuration.supportedHandleTypes = [.phoneNumber]
@@ -49,7 +54,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         if currentCallUUID == nil {
             do {
                 let session = AVAudioSession.sharedInstance()
-                try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+                try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothA2DP])
                 try session.setActive(true)
             } catch {
                 call.reject("Failed to start call: \(error.localizedDescription)")
@@ -288,7 +293,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         }
 
         do {
-            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothA2DP])
             try audioSession.setPreferredInput(nil)
             try audioSession.setActive(true)
 
