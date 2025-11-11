@@ -226,13 +226,17 @@ window.handleNotificationAction = function (action, data) {
     }
   } else if (action === "DECLINE_CALL") {
     if (window.incomingSession) {
+      window.__decliningFromCallKit = true;
       window.declineCall();
+      window.__decliningFromCallKit = false;
     } else {
       window.log("No incoming call to decline");
     }
   } else if (action === "HANGUP") {
     if (window.currentSession) {
+      window.__hangupFromCallKit = true;
       window.hangup();
+      window.__hangupFromCallKit = false;
     } else {
       window.log("No active call to hang up");
     }
@@ -331,11 +335,29 @@ window.handleNotificationAction = function (action, data) {
     }
   } else if (action === "MUTE_CALL") {
     if (!window.isMuted) {
+      window.__updatingMuteFromCallKit = true;
       window.toggleMute();
+      window.__updatingMuteFromCallKit = false;
     }
   } else if (action === "UNMUTE_CALL") {
     if (window.isMuted) {
+      window.__updatingMuteFromCallKit = true;
       window.toggleMute();
+      window.__updatingMuteFromCallKit = false;
+    }
+  } else if (action === "HOLD_CALL") {
+    window.log("🔄 [CallKit] Hold button pressed in CallKit");
+    if (window.toggleHold && !window.isOnHold) {
+      window.__updatingHoldFromCallKit = true;
+      window.toggleHold();
+      window.__updatingHoldFromCallKit = false;
+    }
+  } else if (action === "UNHOLD_CALL") {
+    window.log("▶️ [CallKit] Unhold button pressed in CallKit");
+    if (window.toggleHold && window.isOnHold) {
+      window.__updatingHoldFromCallKit = true;
+      window.toggleHold();
+      window.__updatingHoldFromCallKit = false;
     }
   }
 };

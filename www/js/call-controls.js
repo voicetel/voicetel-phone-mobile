@@ -6,6 +6,8 @@ window.hangup = function () {
   window.log("🔴 Hangup function called");
   window.log(`   currentSession exists: ${!!window.currentSession}`);
 
+  const isIOS = window.Capacitor?.getPlatform() === "ios";
+
   if (window.currentSession) {
     if (currentSession.hasAnswer) {
       currentSession.bye();
@@ -19,17 +21,20 @@ window.hangup = function () {
     window.log("⚠️ No currentSession to hang up");
   }
 
-  // iOS only: Dismiss CallKit call if active
-  const isIOS = window.Capacitor?.getPlatform() === "ios";
-  if (isIOS) {
-    window.log("📱 [iOS] Dismissing CallKit call...");
-    dismissIncomingCallNotification()
+  // iOS only: End CallKit call if active (but only if not triggered FROM CallKit)
+  if (
+    isIOS &&
+    window.Capacitor?.Plugins?.CallService &&
+    !window.__hangupFromCallKit
+  ) {
+    window.log("📱 [iOS] Ending CallKit call...");
+    window.Capacitor.Plugins.CallService.stopCall()
       .then(() => {
-        window.log("✅ [iOS] CallKit call dismissed successfully");
+        window.log("✅ [iOS] CallKit call ended successfully");
       })
       .catch((err) => {
-        window.log("❌ [iOS] Error dismissing CallKit call: " + err.message);
-        console.error("Error dismissing CallKit call:", err);
+        window.log("❌ [iOS] Error ending CallKit call: " + err.message);
+        console.error("Error ending CallKit call:", err);
       });
   }
 
@@ -54,19 +59,26 @@ window.toggleMute = function () {
   const pc = currentSession.sessionDescriptionHandler.peerConnection;
   const senders = pc.getSenders();
 
+  // Toggle the mute state first
+  window.isMuted = !isMuted;
+
+  // Now set track enabled to the opposite of isMuted (enabled when NOT muted)
   senders.forEach((sender) => {
     if (sender.track && sender.track.kind === "audio") {
-      sender.track.enabled = isMuted;
+      sender.track.enabled = !window.isMuted;
     }
   });
 
-  window.isMuted = !isMuted;
   document.getElementById("muteBtn").textContent = isMuted ? "Unmute" : "Mute";
   window.log(window.isMuted ? "Muted" : "Unmuted");
 
-  // iOS only: Update CallKit mute state
+  // iOS only: Update CallKit mute state (but only if not already updating from CallKit)
   const isIOS = window.Capacitor?.getPlatform() === "ios";
-  if (isIOS && window.Capacitor?.Plugins?.CallService) {
+  if (
+    isIOS &&
+    window.Capacitor?.Plugins?.CallService &&
+    !window.__updatingMuteFromCallKit
+  ) {
     window.Capacitor.Plugins.CallService.setCallMuted({ muted: window.isMuted })
       .then(() => {
         window.log(`✅ [iOS] CallKit mute state updated: ${window.isMuted}`);
@@ -74,6 +86,53 @@ window.toggleMute = function () {
       .catch((err) => {
         window.log(
           `⚠️ [iOS] Failed to update CallKit mute state: ${err.message}`,
+        );
+      });
+  }
+};
+
+window.toggleHold = function () {
+  if (!window.currentSession || !currentSession.sessionDescriptionHandler)
+    return;
+
+  const pc = currentSession.sessionDescriptionHandler.peerConnection;
+
+  // Toggle the hold state first
+  window.isOnHold = !isOnHold;
+
+  // Get all senders (audio and video)
+  const senders = pc.getSenders();
+
+  senders.forEach((sender) => {
+    if (sender.track) {
+      // When on hold, disable the track; when resuming, enable it
+      sender.track.enabled = !window.isOnHold;
+    }
+  });
+
+  // Update UI
+  const holdBtn = document.getElementById("holdBtn");
+  if (holdBtn) {
+    holdBtn.textContent = window.isOnHold ? "Resume" : "Hold";
+  }
+  window.log(window.isOnHold ? "Call on hold" : "Call resumed");
+
+  // iOS only: Update CallKit hold state (but only if not already updating from CallKit)
+  const isIOS = window.Capacitor?.getPlatform() === "ios";
+  if (
+    isIOS &&
+    window.Capacitor?.Plugins?.CallService &&
+    !window.__updatingHoldFromCallKit
+  ) {
+    window.Capacitor.Plugins.CallService.setCallHeld({
+      onHold: window.isOnHold,
+    })
+      .then(() => {
+        window.log(`✅ [iOS] CallKit hold state updated: ${window.isOnHold}`);
+      })
+      .catch((err) => {
+        window.log(
+          `⚠️ [iOS] Failed to update CallKit hold state: ${err.message}`,
         );
       });
   }
@@ -132,6 +191,17 @@ window.endCall = async function () {
 
   const isIOSEndCall = window.Capacitor?.getPlatform() === "ios";
   if (isIOSEndCall) {
+    // End CallKit call if it's still active
+    if (window.Capacitor?.Plugins?.CallService) {
+      window.Capacitor.Plugins.CallService.stopCall()
+        .then(() => {
+          window.log("✅ [iOS] CallKit call ended from endCall()");
+        })
+        .catch((err) => {
+          window.log("⚠️ [iOS] CallKit already ended or error: " + err.message);
+        });
+    }
+
     window.callKitAudioSessionActive = false;
     window.pendingAudioStart = false;
     window.__answeringInProgress = false;
@@ -149,7 +219,16 @@ window.endCall = async function () {
 
   window.hideCallControls();
   window.isMuted = false;
+  window.isOnHold = false;
+  window.__updatingMuteFromCallKit = false;
+  window.__updatingHoldFromCallKit = false;
+  window.__decliningFromCallKit = false;
+  window.__hangupFromCallKit = false;
   document.getElementById("muteBtn").textContent = "Mute";
+  const holdBtn = document.getElementById("holdBtn");
+  if (holdBtn) {
+    holdBtn.textContent = "Hold";
+  }
   document.getElementById("callStatus").textContent = "Call in progress";
   document.getElementById("callNumber").placeholder =
     "Enter number to dial / DTMF during call";

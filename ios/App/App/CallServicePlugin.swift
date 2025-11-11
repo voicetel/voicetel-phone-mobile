@@ -160,6 +160,10 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         callUpdate.remoteHandle = handle
         callUpdate.localizedCallerName = callerName.isEmpty ? callerNumber : callerName
         callUpdate.hasVideo = false
+        callUpdate.supportsHolding = true
+        callUpdate.supportsDTMF = true
+        callUpdate.supportsGrouping = false
+        callUpdate.supportsUngrouping = false
 
         provider.reportNewIncomingCall(with: callUUID, update: callUpdate) { error in
             if let error = error {
@@ -230,6 +234,28 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         }
     }
 
+    @objc public func setCallHeld(_ call: CAPPluginCall) {
+        guard let onHold = call.getBool("onHold") else {
+            call.reject("Missing onHold parameter")
+            return
+        }
+
+        if let callUUID = currentCallUUID {
+            let holdAction = CXSetHeldCallAction(call: callUUID, onHold: onHold)
+            let transaction = CXTransaction(action: holdAction)
+
+            callController?.request(transaction) { error in
+                if let error = error {
+                    call.reject("Failed to set hold state: \(error.localizedDescription)")
+                } else {
+                    call.resolve(["success": true])
+                }
+            }
+        } else {
+            call.resolve(["success": false, "message": "No active call"])
+        }
+    }
+
     // MARK: - CXProviderDelegate
 
     public func providerDidReset(_ provider: CXProvider) {
@@ -243,7 +269,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         callUpdate.localizedCallerName = action.handle.value
         callUpdate.supportsGrouping = false
         callUpdate.supportsUngrouping = false
-        callUpdate.supportsHolding = false
+        callUpdate.supportsHolding = true
         callUpdate.supportsDTMF = true
 
         // Report the call update
@@ -253,6 +279,16 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
+        // Update call configuration to ensure hold and other features are enabled
+        let callUpdate = CXCallUpdate()
+        callUpdate.supportsHolding = true
+        callUpdate.supportsDTMF = true
+        callUpdate.supportsGrouping = false
+        callUpdate.supportsUngrouping = false
+        callUpdate.hasVideo = false
+
+        callProvider?.reportCall(with: action.callUUID, updated: callUpdate)
+
         notifyBridge(action: "ANSWER_CALL")
         action.fulfill()
     }
@@ -274,6 +310,11 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     public func provider(_ provider: CXProvider, perform action: CXSetHeldCallAction) {
+        if action.isOnHold {
+            notifyBridge(action: "HOLD_CALL")
+        } else {
+            notifyBridge(action: "UNHOLD_CALL")
+        }
         action.fulfill()
     }
 

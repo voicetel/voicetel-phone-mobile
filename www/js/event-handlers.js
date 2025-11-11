@@ -116,6 +116,13 @@ window.setupEventHandlers = function () {
     });
   }
 
+  const holdBtn = document.getElementById("holdBtn");
+  if (holdBtn) {
+    holdBtn.addEventListener("click", () => {
+      window.toggleHold();
+    });
+  }
+
   if (showDialpadBtn) {
     showDialpadBtn.addEventListener("click", () => {
       window.showDialpad();

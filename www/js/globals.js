@@ -80,6 +80,11 @@ window.audioStarted = false;
 window.__answeringInProgress = false; // iOS only: prevents infinite answer loop
 window.__callKitAnswered = false; // iOS only: tracks if CallKit triggered answer
 window.localAudioTrack = null; // iOS only: reference to current microphone track for cleanup
+window.__updatingMuteFromCallKit = false; // iOS only: prevents mute/unmute loop with CallKit
+window.isOnHold = false; // Call hold state
+window.__updatingHoldFromCallKit = false; // iOS only: prevents hold/unhold loop with CallKit
+window.__decliningFromCallKit = false; // iOS only: tracks if decline came from CallKit
+window.__hangupFromCallKit = false; // iOS only: prevents hangup loop with CallKit
 
 // Wake lock
 window.wakeLock = null;

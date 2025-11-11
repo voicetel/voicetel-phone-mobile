@@ -395,6 +395,8 @@ window.declineCall = async function () {
     return;
   }
 
+  const isIOS = window.Capacitor?.getPlatform() === "ios";
+
   if (window.incomingCallTimeout) {
     clearTimeout(window.incomingCallTimeout);
     window.incomingCallTimeout = null;
@@ -402,8 +404,8 @@ window.declineCall = async function () {
 
   window.stopRinging();
 
-  const isIOS = window.Capacitor?.getPlatform() === "ios";
-  if (isIOS) {
+  // iOS only: Dismiss CallKit call (but only if not triggered FROM CallKit)
+  if (isIOS && !window.__decliningFromCallKit) {
     await dismissIncomingCallNotification();
   }
 
@@ -525,6 +527,22 @@ window.setupSessionHandlers = function (session) {
     }
     window.activeCall = true;
     window.log("Call connected");
+
+    // iOS: Report to CallKit that call is now connected (enables hold/mute)
+    const isIOS = window.Capacitor?.getPlatform() === "ios";
+    if (
+      isIOS &&
+      window.Capacitor?.Plugins?.CallService &&
+      window.__callDirection === "incoming"
+    ) {
+      window.Capacitor.Plugins.CallService.reportCallConnected()
+        .then(() => {
+          window.log("✅ [iOS] CallKit notified call is connected");
+        })
+        .catch((err) => {
+          window.log("⚠️ [iOS] Failed to notify CallKit: " + err.message);
+        });
+    }
 
     // Try to start audio now that call is active
     window.tryStartWebRTCAudio();
