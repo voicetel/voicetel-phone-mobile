@@ -83,5 +83,9 @@
 	<string>VoiceTel uses Bluetooth for audio with headsets and car systems.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>VoiceTel uses Bluetooth to communicate with audio devices.</string>
+	<key>ManualInitAudioDevice</key>
+	<true/>
+	<key>UseManualLayoutRenderer</key>
+	<true/>
 </dict>
 </plist>

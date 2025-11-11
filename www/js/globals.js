@@ -49,12 +49,37 @@ window.__incomingDisplay = null;
 // Contacts list
 window.contactsList = [];
 
+// Platform detection - will be updated when Capacitor is ready
+window.isIOS = false;
+window.isAndroid = false;
+
+// Update platform detection when Capacitor is ready
+if (window.Capacitor && window.Capacitor.getPlatform) {
+  window.isIOS = window.Capacitor.getPlatform() === "ios";
+  window.isAndroid = window.Capacitor.getPlatform() === "android";
+} else {
+  // Fallback: listen for deviceready event
+  document.addEventListener("deviceready", function () {
+    if (window.Capacitor && window.Capacitor.getPlatform) {
+      window.isIOS = window.Capacitor.getPlatform() === "ios";
+      window.isAndroid = window.Capacitor.getPlatform() === "android";
+      console.log(
+        "Platform detected: iOS=" +
+          window.isIOS +
+          ", Android=" +
+          window.isAndroid,
+      );
+    }
+  });
+}
+
 // Audio session state (iOS only)
 window.callKitAudioSessionActive = false;
 window.pendingAudioStart = false;
 window.audioStarted = false;
 window.__answeringInProgress = false; // iOS only: prevents infinite answer loop
 window.__callKitAnswered = false; // iOS only: tracks if CallKit triggered answer
+window.localAudioTrack = null; // iOS only: reference to current microphone track for cleanup
 
 // Wake lock
 window.wakeLock = null;

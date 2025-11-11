@@ -60,7 +60,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         if currentCallUUID == nil {
             do {
                 let session = AVAudioSession.sharedInstance()
-                try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP, .allowBluetoothA2DP, .mixWithOthers, .duckOthers, .defaultToSpeaker])
+                try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
                 try session.setActive(true)
                 logger.info("startCall: activated audio session (no CallKit), number=\(self.currentCallNumber)")
             } catch {
@@ -352,8 +352,13 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         // Configure audio session for VoIP calls
         do {
             logger.error("   Setting category to playAndRecord, mode voiceChat...")
-            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP, .allowBluetoothA2DP, .defaultToSpeaker])
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
             logger.error("   ✅ Category set")
+
+            // Configure preferred input/output
+            logger.error("   Configuring audio routing...")
+            try audioSession.setPreferredInput(nil) // Use default input
+            logger.error("   ✅ Audio routing configured")
 
             logger.error("   Activating audio session...")
             try audioSession.setActive(true)
@@ -363,10 +368,12 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
 
             logAudioSessionState("didActivate AFTER activation")
 
-            // Notify JavaScript that audio session is ready (ONLY ONCE)
-            notifyBridge(action: "AUDIO_SESSION_ACTIVATED")
-
-            logger.error("🔊 Audio should now be working - check if you can hear audio")
+            // Small delay to ensure audio system is fully ready
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Notify JavaScript that audio session is ready (ONLY ONCE)
+                self.notifyBridge(action: "AUDIO_SESSION_ACTIVATED")
+                self.logger.error("🔊 CallKit audio session ready - JS notified to refresh microphone")
+            }
         } catch {
             logger.error("❌❌❌ Failed to configure audio session: \(error.localizedDescription)")
             let nsError = error as NSError

@@ -131,13 +131,24 @@ window.endCall = async function () {
   // Reset audio flags for next call
   window.audioStarted = false;
 
-  // iOS only: Reset CallKit-specific flags
+  // iOS only: Reset CallKit-specific flags and cleanup audio track
   const isIOSEndCall = window.Capacitor?.getPlatform() === "ios";
   if (isIOSEndCall) {
     window.callKitAudioSessionActive = false;
     window.pendingAudioStart = false;
     window.__answeringInProgress = false;
     window.__callKitAnswered = false;
+
+    // Stop and cleanup local audio track
+    if (window.localAudioTrack) {
+      try {
+        window.localAudioTrack.stop();
+        window.log("🔇 [CallKit] Local audio track stopped and cleaned up");
+      } catch (e) {
+        window.log("⚠️ [CallKit] Error stopping audio track: " + e.message);
+      }
+      window.localAudioTrack = null;
+    }
   }
 
   window.hideCallControls();

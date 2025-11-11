@@ -2,314 +2,390 @@
 // AUDIO MANAGEMENT MODULE
 // ========================================
 
-window.createRingingTone = function() {
-				const audioContext = new (window.AudioContext ||
-					window.webkitAudioContext)();
+window.createRingingTone = function () {
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-				// iOS: Resume AudioContext if suspended (required for iOS)
-				if (audioContext.state === "suspended") {
-					audioContext.resume().catch((err) => {
-						console.error("Failed to resume AudioContext:", err);
-					});
-				}
+  // iOS: Resume AudioContext if suspended (required for iOS)
+  if (audioContext.state === "suspended") {
+    audioContext.resume().catch((err) => {
+      console.error("Failed to resume AudioContext:", err);
+    });
+  }
 
-				const oscillator1 = audioContext.createOscillator();
-				const oscillator2 = audioContext.createOscillator();
-				const gainNode = audioContext.createGain();
+  const oscillator1 = audioContext.createOscillator();
+  const oscillator2 = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
 
-				oscillator1.frequency.value = 440;
-				oscillator2.frequency.value = 480;
-				oscillator1.type = "sine";
-				oscillator2.type = "sine";
+  oscillator1.frequency.value = 440;
+  oscillator2.frequency.value = 480;
+  oscillator1.type = "sine";
+  oscillator2.type = "sine";
 
-				gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+  gainNode.gain.setValueAtTime(0, audioContext.currentTime);
 
-				const ringPattern = () => {
-					const now = audioContext.currentTime;
-					gainNode.gain.setValueAtTime(0.1, now);
-					gainNode.gain.setValueAtTime(0.1, now + 2);
-					gainNode.gain.setValueAtTime(0, now + 2.01);
-					gainNode.gain.setValueAtTime(0, now + 6);
-				};
+  const ringPattern = () => {
+    const now = audioContext.currentTime;
+    gainNode.gain.setValueAtTime(0.1, now);
+    gainNode.gain.setValueAtTime(0.1, now + 2);
+    gainNode.gain.setValueAtTime(0, now + 2.01);
+    gainNode.gain.setValueAtTime(0, now + 6);
+  };
 
-				oscillator1.connect(gainNode);
-				oscillator2.connect(gainNode);
-				gainNode.connect(audioContext.destination);
+  oscillator1.connect(gainNode);
+  oscillator2.connect(gainNode);
+  gainNode.connect(audioContext.destination);
 
-				oscillator1.start();
-				oscillator2.start();
+  oscillator1.start();
+  oscillator2.start();
 
-				ringPattern();
-				const ringInterval = setInterval(ringPattern, 6000);
+  ringPattern();
+  const ringInterval = setInterval(ringPattern, 6000);
 
-				return {
-					stop: () => {
-						clearInterval(ringInterval);
-						gainNode.gain.setValueAtTime(
-							0,
-							audioContext.currentTime,
-						);
-						setTimeout(() => {
-							oscillator1.stop();
-							oscillator2.stop();
-							audioContext.close();
-						}, 100);
-					},
-				};
-			}
+  return {
+    stop: () => {
+      clearInterval(ringInterval);
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      setTimeout(() => {
+        oscillator1.stop();
+        oscillator2.stop();
+        audioContext.close();
+      }, 100);
+    },
+  };
+};
 
-window.startRinging = function() {
-				document.getElementById("ringingIndicator").style.display =
-					"block";
-				document.getElementById("callStatus").textContent =
-					"Ringing...";
+window.startRinging = function () {
+  document.getElementById("ringingIndicator").style.display = "block";
+  document.getElementById("callStatus").textContent = "Ringing...";
 
-				try {
-					window.ringingAudio = createRingingTone();
-				} catch (e) {
-					window.log("Could not generate ringing tone: " + e.message);
-				}
-			}
+  try {
+    window.ringingAudio = createRingingTone();
+  } catch (e) {
+    window.log("Could not generate ringing tone: " + e.message);
+  }
+};
 
-window.stopRinging = function() {
-				document.getElementById("ringingIndicator").style.display =
-					"none";
-				document.getElementById("callStatus").textContent =
-					"Call in progress";
+window.stopRinging = function () {
+  document.getElementById("ringingIndicator").style.display = "none";
+  document.getElementById("callStatus").textContent = "Call in progress";
 
-				if (window.ringingAudio) {
-					ringingAudio.stop();
-					window.ringingAudio = null;
-				}
-			}
+  if (window.ringingAudio) {
+    ringingAudio.stop();
+    window.ringingAudio = null;
+  }
+};
 
-window.setupBluetoothAudio = function() {
-				try {
-					// Create audio context for Bluetooth audio
-					window.bluetoothAudioContext = new (window.AudioContext ||
-						window.webkitAudioContext)();
-					window.bluetoothAudioGain = bluetoothAudioContext.createGain();
-					bluetoothAudioGain.connect(
-						bluetoothAudioContext.destination,
-					);
+window.setupBluetoothAudio = function () {
+  try {
+    // Create audio context for Bluetooth audio
+    window.bluetoothAudioContext = new (window.AudioContext ||
+      window.webkitAudioContext)();
+    window.bluetoothAudioGain = bluetoothAudioContext.createGain();
+    bluetoothAudioGain.connect(bluetoothAudioContext.destination);
 
-					window.log("Bluetooth audio context initialized");
-				} catch (error) {
-					window.log("Bluetooth audio setup failed: " + error.message);
-				}
-			}
+    window.log("Bluetooth audio context initialized");
+  } catch (error) {
+    window.log("Bluetooth audio setup failed: " + error.message);
+  }
+};
 
-window.handleBluetoothAudio = function() {
-				if (window.bluetoothAudioContext && window.bluetoothAudioGain) {
-					// Route audio through Bluetooth when available
-					bluetoothAudioGain.gain.value = 1.0;
-					window.log("Audio routed through Bluetooth");
-				}
-			}
+window.handleBluetoothAudio = function () {
+  if (window.bluetoothAudioContext && window.bluetoothAudioGain) {
+    // Route audio through Bluetooth when available
+    bluetoothAudioGain.gain.value = 1.0;
+    window.log("Audio routed through Bluetooth");
+  }
+};
 
-window.handleBluetoothDisconnect = function() {
-				if (window.bluetoothAudioGain) {
-					// Reduce gain when Bluetooth disconnects
-					bluetoothAudioGain.gain.value = 0.5;
-					window.log("Bluetooth disconnected - audio routed to speaker");
-				}
-			}
+window.handleBluetoothDisconnect = function () {
+  if (window.bluetoothAudioGain) {
+    // Reduce gain when Bluetooth disconnects
+    bluetoothAudioGain.gain.value = 0.5;
+    window.log("Bluetooth disconnected - audio routed to speaker");
+  }
+};
 
-window.configureAudioSession = function() {
-				try {
-					// Request audio focus for phone calls
-					if (
-						navigator.mediaDevices &&
-						navigator.mediaDevices.getUserMedia
-					) {
-						// Set audio constraints for phone calls
-						const audioConstraints = {
-							audio: {
-								echoCancellation: true,
-								noiseSuppression: true,
-								autoGainControl: true,
-								// Request audio focus for phone calls
-								channelCount: 1,
-								sampleRate: 8000,
-							},
-						};
+window.configureAudioSession = function () {
+  try {
+    // Request audio focus for phone calls
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // Set audio constraints for phone calls
+      const audioConstraints = {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          // Request audio focus for phone calls
+          channelCount: 1,
+          sampleRate: 8000,
+        },
+      };
 
-						window.log(
-							"Audio session configured for lock screen continuity",
-						);
+      window.log("Audio session configured for lock screen continuity");
 
-						// Set up visibility change handler for audio management
-						document.addEventListener(
-							"visibilitychange",
-							function () {
-								if (window.currentSession && !document.hidden) {
-									// App came back to foreground - ensure audio is still working
-									window.log(
-										"App returned to foreground - checking audio session",
-									);
-									handleBluetoothAudio();
-								}
-							},
-						);
-					}
-				} catch (error) {
-					window.log("Error configuring audio session: " + error.message);
-				}
-			}
+      // Set up visibility change handler for audio management
+      document.addEventListener("visibilitychange", function () {
+        if (window.currentSession && !document.hidden) {
+          // App came back to foreground - ensure audio is still working
+          window.log("App returned to foreground - checking audio session");
+          handleBluetoothAudio();
+        }
+      });
+    }
+  } catch (error) {
+    window.log("Error configuring audio session: " + error.message);
+  }
+};
 
-window.requestWakeLock = async function() {
-				try {
-					if ("wakeLock" in navigator) {
-						window.wakeLock = await navigator.wakeLock.request("screen");
-						window.log(
-							"Wake lock acquired - screen will stay on during call",
-						);
+window.requestWakeLock = async function () {
+  try {
+    if ("wakeLock" in navigator) {
+      window.wakeLock = await navigator.wakeLock.request("screen");
+      window.log("Wake lock acquired - screen will stay on during call");
 
-						wakeLock.addEventListener("release", () => {
-							window.log("Wake lock released");
-						});
-					} else {
-						window.log("Wake lock API not supported");
-					}
-				} catch (error) {
-					window.log("Wake lock failed: " + error.message);
-				}
-			}
+      wakeLock.addEventListener("release", () => {
+        window.log("Wake lock released");
+      });
+    } else {
+      window.log("Wake lock API not supported");
+    }
+  } catch (error) {
+    window.log("Wake lock failed: " + error.message);
+  }
+};
 
-window.releaseWakeLock = async function() {
-				try {
-					if (window.wakeLock) {
-						await wakeLock.release();
-						window.wakeLock = null;
-						window.log("Wake lock released");
-					}
-				} catch (error) {
-					window.log("Error releasing wake lock: " + error.message);
-				}
-			}
+window.releaseWakeLock = async function () {
+  try {
+    if (window.wakeLock) {
+      await wakeLock.release();
+      window.wakeLock = null;
+      window.log("Wake lock released");
+    }
+  } catch (error) {
+    window.log("Error releasing wake lock: " + error.message);
+  }
+};
 
-window.tryStartWebRTCAudio = function() {
-				// Don't try if already started for this call
-				if (window.audioStarted) {
-					return;
-				}
+window.tryStartWebRTCAudio = async function () {
+  // Don't try if already started for this call
+  if (window.audioStarted) {
+    return;
+  }
 
-				// Check if we have an active session and call
-				if (!window.currentSession || !activeCall) {
-					window.log(
-						"⏸️ Cannot start audio yet - session or call not ready",
-					);
-					return;
-				}
+  // Check if we have an active session and call
+  if (!window.currentSession || !window.activeCall) {
+    window.log("⏸️ Cannot start audio yet - session or call not ready");
+    return;
+  }
 
-				// iOS-specific: wait for CallKit audio session
-				if (
-					window.Capacitor &&
-					window.Capacitor.getPlatform() === "ios"
-				) {
-					if (!window.callKitAudioSessionActive) {
-						window.log(
-							"⏸️ [iOS] Waiting for CallKit audio session activation",
-						);
-						window.pendingAudioStart = true;
-						return;
-					}
-				}
+  // On iOS with CallKit, wait for audio session to be activated by CallKit
+  if (window.isIOS && window.callKitAudioSessionActive === false) {
+    window.log(
+      "⏸️ [CallKit] Waiting for audio session to be activated by CallKit",
+    );
+    window.pendingAudioStart = true;
+    return;
+  }
 
-				// All conditions met - start audio
-				window.log("🎵 Starting WebRTC audio...");
-				startWebRTCAudio();
-				window.audioStarted = true;
-				window.pendingAudioStart = false;
-			}
+  // All conditions met - start audio
+  window.log("🎵 Starting WebRTC audio...");
+  startWebRTCAudio();
 
-window.startWebRTCAudio = function() {
-				if (!window.currentSession || !activeCall) {
-					return;
-				}
+  // On iOS with CallKit, refresh the microphone track after audio session is active
+  if (window.isIOS && window.callKitAudioSessionActive) {
+    window.log(
+      "🎤 [CallKit] Audio session is active, refreshing microphone track...",
+    );
+    const success = await window.refreshMicrophoneTrack();
+    if (success) {
+      window.log("✅ [CallKit] Microphone track refreshed successfully");
+    } else {
+      window.log(
+        "⚠️ [CallKit] Failed to refresh microphone track, but continuing...",
+      );
+    }
+  }
 
-				try {
-					const pc =
-						currentSession.sessionDescriptionHandler.peerConnection;
-					if (!pc) {
-						return;
-					}
+  window.audioStarted = true;
+  window.pendingAudioStart = false;
+};
 
-					const remoteStream = new MediaStream();
-					pc.getReceivers().forEach((receiver) => {
-						if (receiver.track) {
-							remoteStream.addTrack(receiver.track);
-						}
-					});
+window.startWebRTCAudio = function () {
+  if (!window.currentSession || !window.activeCall) {
+    return;
+  }
 
-					const remoteAudio = document.getElementById("remoteAudio");
-					if (!remoteAudio) {
-						return;
-					}
+  try {
+    const pc = window.currentSession.sessionDescriptionHandler.peerConnection;
+    if (!pc) {
+      return;
+    }
 
-					remoteAudio.srcObject = remoteStream;
-					remoteAudio.volume = 1.0;
-					remoteAudio.muted = false;
+    const remoteStream = new MediaStream();
+    pc.getReceivers().forEach((receiver) => {
+      if (receiver.track) {
+        remoteStream.addTrack(receiver.track);
+      }
+    });
 
-					remoteAudio
-						.play()
-						.then(() => {
-							window.log(
-								"✅ [CallKit] Remote audio playing successfully",
-							);
-						})
-						.catch((err) => {
-							window.log(
-								"❌ [CallKit] Error playing remote audio: " +
-									err.message,
-							);
-						});
-				} catch (e) {
-					window.log(
-						"❌ [CallKit] Error starting WebRTC audio: " +
-							e.message,
-					);
-				}
-			}
+    const remoteAudio = document.getElementById("remoteAudio");
+    if (!remoteAudio) {
+      return;
+    }
 
-window.setupAudioSession = function() {
-				try {
-					// Configure audio context for phone calls
-					if (window.AudioContext || window.webkitAudioContext) {
-						const AudioContext =
-							window.AudioContext || window.webkitAudioContext;
-						const audioContext = new AudioContext();
+    remoteAudio.srcObject = remoteStream;
+    remoteAudio.volume = 1.0;
+    remoteAudio.muted = false;
 
-						// Set audio context state to running
-						if (audioContext.state === "suspended") {
-							audioContext.resume().then(() => {
-								window.log(
-									"Audio context resumed for lock screen continuity",
-								);
-							});
-						}
+    remoteAudio
+      .play()
+      .then(() => {
+        window.log("✅ [CallKit] Remote audio playing successfully");
+      })
+      .catch((err) => {
+        window.log("❌ [CallKit] Error playing remote audio: " + err.message);
+      });
+  } catch (e) {
+    window.log("❌ [CallKit] Error starting WebRTC audio: " + e.message);
+  }
+};
 
-						// Handle visibility changes for audio context
-						document.addEventListener(
-							"visibilitychange",
-							function () {
-								if (
-									audioContext.state === "suspended" &&
-									window.currentSession
-								) {
-									audioContext.resume().then(() => {
-										window.log(
-											"Audio context resumed on visibility change",
-										);
-									});
-								}
-							},
-						);
-					}
+window.refreshMicrophoneTrack = async function () {
+  window.log(
+    "🎤 [CallKit] Refreshing microphone track after audio session activation...",
+  );
 
-					window.log("Audio session setup completed");
-				} catch (error) {
-					window.log("Error setting up audio session: " + error.message);
-				}
-			}
+  if (!window.currentSession || !window.activeCall) {
+    window.log("⚠️ [CallKit] No active session to refresh microphone");
+    return false;
+  }
 
+  try {
+    const pc = window.currentSession.sessionDescriptionHandler.peerConnection;
+    if (!pc) {
+      window.log("⚠️ [CallKit] No peer connection available");
+      return false;
+    }
+
+    // Get a fresh microphone track now that CallKit has activated the audio session
+    window.log("🎤 [CallKit] Requesting fresh microphone access...");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!audioTrack) {
+      window.log("❌ [CallKit] No audio track in fresh stream");
+      return false;
+    }
+
+    window.log(
+      "✅ [CallKit] Fresh microphone track obtained: " + audioTrack.label,
+    );
+    window.log("   Track enabled: " + audioTrack.enabled);
+    window.log("   Track readyState: " + audioTrack.readyState);
+    window.log("   Track muted: " + audioTrack.muted);
+
+    // Find the audio sender and replace the track
+    const senders = pc.getSenders();
+    let audioSender = null;
+    for (const sender of senders) {
+      if (sender.track && sender.track.kind === "audio") {
+        audioSender = sender;
+        break;
+      }
+    }
+
+    if (audioSender) {
+      window.log("🔄 [CallKit] Replacing old audio track with fresh one...");
+
+      // Stop old track first
+      if (window.localAudioTrack) {
+        window.localAudioTrack.stop();
+        window.log("🔇 [CallKit] Stopped old audio track");
+      }
+
+      await audioSender.replaceTrack(audioTrack);
+      window.log("✅ [CallKit] Audio track replaced successfully");
+
+      // CRITICAL: Ensure the track is enabled and unmuted
+      audioTrack.enabled = true;
+      window.log("   Track enabled: " + audioTrack.enabled);
+      window.log("   Track readyState: " + audioTrack.readyState);
+      window.log("   Track muted: " + audioTrack.muted);
+
+      // Store reference to stop it later
+      window.localAudioTrack = audioTrack;
+
+      // Verify the sender is using the new track
+      if (audioSender.track) {
+        window.log("   Sender track ID: " + audioSender.track.id);
+        window.log("   Sender track enabled: " + audioSender.track.enabled);
+      }
+
+      window.log(
+        "✅ [CallKit] Microphone track is now active and sending audio",
+      );
+
+      return true;
+    } else {
+      window.log("⚠️ [CallKit] No audio sender found, adding track...");
+
+      // If there's no sender, add the track
+      audioTrack.enabled = true;
+      pc.addTrack(audioTrack, stream);
+      window.localAudioTrack = audioTrack;
+      window.log("✅ [CallKit] Audio track added to peer connection");
+      window.log("   Track enabled: " + audioTrack.enabled);
+      window.log("   Track ID: " + audioTrack.id);
+
+      return true;
+    }
+  } catch (error) {
+    window.log(
+      "❌ [CallKit] Error refreshing microphone track: " + error.message,
+    );
+    window.log("   Error name: " + error.name);
+    if (error.name === "NotAllowedError") {
+      window.log("   Microphone permission denied!");
+    } else if (error.name === "NotFoundError") {
+      window.log("   No microphone device found!");
+    }
+    return false;
+  }
+};
+
+window.setupAudioSession = function () {
+  try {
+    // Configure audio context for phone calls
+    if (window.AudioContext || window.webkitAudioContext) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const audioContext = new AudioContext();
+
+      // Set audio context state to running
+      if (audioContext.state === "suspended") {
+        audioContext.resume().then(() => {
+          window.log("Audio context resumed for lock screen continuity");
+        });
+      }
+
+      // Handle visibility changes for audio context
+      document.addEventListener("visibilitychange", function () {
+        if (audioContext.state === "suspended" && window.currentSession) {
+          audioContext.resume().then(() => {
+            window.log("Audio context resumed on visibility change");
+          });
+        }
+      });
+    }
+
+    window.log("Audio session setup completed");
+  } catch (error) {
+    window.log("Error setting up audio session: " + error.message);
+  }
+};
