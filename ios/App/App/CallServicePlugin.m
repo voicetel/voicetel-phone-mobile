@@ -10,6 +10,7 @@ CAP_PLUGIN(CallServicePlugin, "CallService",
   CAP_PLUGIN_METHOD(showIncomingCallNotification, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(dismissIncomingCallNotification, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(reportCallConnected, CAPPluginReturnPromise);
+  CAP_PLUGIN_METHOD(reportOutgoingCallStartedConnecting, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(setCallMuted, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(setCallHeld, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(saveRecording, CAPPluginReturnPromise);

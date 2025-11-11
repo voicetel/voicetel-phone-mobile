@@ -12,11 +12,11 @@ public class CallServicePlugin extends Plugin {
     @PluginMethod
     public void startCall(PluginCall call) {
         String callNumber = call.getString("callNumber", "");
-        
+
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             activity.startCallService(callNumber);
-            
+
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);
@@ -30,7 +30,7 @@ public class CallServicePlugin extends Plugin {
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             activity.stopCallService();
-            
+
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);
@@ -42,11 +42,11 @@ public class CallServicePlugin extends Plugin {
     @PluginMethod
     public void updateCallNumber(PluginCall call) {
         String callNumber = call.getString("callNumber", "");
-        
+
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             activity.updateCallServiceNumber(callNumber);
-            
+
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);
@@ -60,7 +60,7 @@ public class CallServicePlugin extends Plugin {
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             boolean isRunning = activity.isCallServiceRunning();
-            
+
             JSObject ret = new JSObject();
             ret.put("isRunning", isRunning);
             call.resolve(ret);
@@ -73,11 +73,11 @@ public class CallServicePlugin extends Plugin {
     public void showIncomingCallNotification(PluginCall call) {
         String callerName = call.getString("callerName", "Unknown");
         String callerNumber = call.getString("callerNumber", "");
-        
+
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             activity.showIncomingCallNotification(callerName, callerNumber);
-            
+
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);
@@ -91,7 +91,55 @@ public class CallServicePlugin extends Plugin {
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             activity.dismissIncomingCallNotification();
-            
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } else {
+            call.reject("Activity not available");
+        }
+    }
+
+    @PluginMethod
+    public void updateCallState(PluginCall call) {
+        String state = call.getString("state", "connected");
+
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            activity.updateCallState(state);
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } else {
+            call.reject("Activity not available");
+        }
+    }
+
+    @PluginMethod
+    public void setCallMuted(PluginCall call) {
+        Boolean muted = call.getBoolean("muted", false);
+
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            activity.updateCallMuted(muted);
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } else {
+            call.reject("Activity not available");
+        }
+    }
+
+    @PluginMethod
+    public void setCallHeld(PluginCall call) {
+        Boolean onHold = call.getBoolean("onHold", false);
+
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            activity.updateCallHeld(onHold);
+
             JSObject ret = new JSObject();
             ret.put("success", true);
             call.resolve(ret);
@@ -106,7 +154,7 @@ public class CallServicePlugin extends Plugin {
         String data = call.getString("data", "");
         String mimeType = call.getString("mimeType", "audio/webm");
         String convertToFormat = call.getString("convertToFormat", null); // Optional: "mp3", "wav", etc.
-        
+
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             try {
@@ -118,7 +166,7 @@ public class CallServicePlugin extends Plugin {
                     // Save as-is
                     filePath = activity.saveRecordingFile(filename, data, mimeType);
                 }
-                
+
                 JSObject ret = new JSObject();
                 ret.put("success", true);
                 ret.put("filePath", filePath);
@@ -130,7 +178,7 @@ public class CallServicePlugin extends Plugin {
             call.reject("Activity not available");
         }
     }
-    
+
     @PluginMethod
     public void getSupportedFormats(PluginCall call) {
         // Returns formats that MediaRecorder supports (from JavaScript)
@@ -146,13 +194,13 @@ public class CallServicePlugin extends Plugin {
     @PluginMethod
     public void getRecordingFileUrl(PluginCall call) {
         String filename = call.getString("filename", "");
-        
+
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             try {
                 // Read file and convert to base64 data URL for WebView compatibility
                 String dataUrl = activity.getRecordingFileAsDataUrl(filename);
-                
+
                 JSObject ret = new JSObject();
                 ret.put("success", true);
                 ret.put("url", dataUrl);
@@ -168,12 +216,12 @@ public class CallServicePlugin extends Plugin {
     @PluginMethod
     public void deleteRecordingFile(PluginCall call) {
         String filename = call.getString("filename", "");
-        
+
         MainActivity activity = (MainActivity) getActivity();
         if (activity != null) {
             try {
                 boolean deleted = activity.deleteRecordingFile(filename);
-                
+
                 JSObject ret = new JSObject();
                 ret.put("success", deleted);
                 call.resolve(ret);
@@ -185,4 +233,3 @@ public class CallServicePlugin extends Plugin {
         }
     }
 }
-

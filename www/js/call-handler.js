@@ -343,7 +343,9 @@ window.answerCall = async function () {
     if (!calledFromCallKit) {
       try {
         if (window.Capacitor?.Plugins?.CallService) {
-          await window.Capacitor.Plugins.CallService.reportCallConnected();
+          await window.Capacitor.Plugins.CallService.reportCallConnected({
+            isOutgoing: false,
+          });
         }
       } catch (err) {
         // Failed to notify CallKit
@@ -454,6 +456,41 @@ window.setupSessionHandlers = function (session) {
       ) {
         window.startRinging();
         ringingStarted = true;
+
+        // Report to native platform that remote is ringing (for outgoing calls)
+        const isIOS = window.Capacitor?.getPlatform() === "ios";
+        const isAndroid = window.Capacitor?.getPlatform() === "android";
+
+        if (
+          window.Capacitor?.Plugins?.CallService &&
+          window.__callDirection === "outgoing"
+        ) {
+          if (isIOS) {
+            window.Capacitor.Plugins.CallService.reportOutgoingCallStartedConnecting()
+              .then(() => {
+                window.log(
+                  "✅ [iOS] CallKit notified call started connecting (ringing)",
+                );
+              })
+              .catch((err) => {
+                window.log(
+                  "⚠️ [iOS] Failed to notify CallKit ringing: " + err.message,
+                );
+              });
+          } else if (isAndroid) {
+            window.Capacitor.Plugins.CallService.updateCallState({
+              state: "ringing",
+            })
+              .then(() => {
+                window.log("✅ [Android] Notification updated: Ringing");
+              })
+              .catch((err) => {
+                window.log(
+                  "⚠️ [Android] Failed to update notification: " + err.message,
+                );
+              });
+          }
+        }
       }
       if (response.status_code === 183) {
         const remoteAudio = document.getElementById("remoteAudio");
@@ -528,20 +565,45 @@ window.setupSessionHandlers = function (session) {
     window.activeCall = true;
     window.log("Call connected");
 
-    // iOS: Report to CallKit that call is now connected (enables hold/mute)
+    // Report to native platform that call is now connected
     const isIOS = window.Capacitor?.getPlatform() === "ios";
-    if (
-      isIOS &&
-      window.Capacitor?.Plugins?.CallService &&
-      window.__callDirection === "incoming"
-    ) {
-      window.Capacitor.Plugins.CallService.reportCallConnected()
-        .then(() => {
-          window.log("✅ [iOS] CallKit notified call is connected");
+    const isAndroid = window.Capacitor?.getPlatform() === "android";
+
+    if (window.Capacitor?.Plugins?.CallService) {
+      if (isIOS) {
+        // For outgoing calls: Always report connected
+        // For incoming calls: Only if NOT answered from CallKit (to avoid error 4)
+        const shouldReport =
+          window.__callDirection === "outgoing" ||
+          (window.__callDirection === "incoming" && !window.__callKitAnswered);
+
+        if (shouldReport) {
+          const isOutgoing = window.__callDirection === "outgoing";
+          window.Capacitor.Plugins.CallService.reportCallConnected({
+            isOutgoing: isOutgoing,
+          })
+            .then(() => {
+              window.log(
+                `✅ [iOS] CallKit notified ${isOutgoing ? "outgoing" : "incoming"} call is connected`,
+              );
+            })
+            .catch((err) => {
+              window.log("⚠️ [iOS] Failed to notify CallKit: " + err.message);
+            });
+        }
+      } else if (isAndroid) {
+        window.Capacitor.Plugins.CallService.updateCallState({
+          state: "connected",
         })
-        .catch((err) => {
-          window.log("⚠️ [iOS] Failed to notify CallKit: " + err.message);
-        });
+          .then(() => {
+            window.log("✅ [Android] Notification updated: Connected");
+          })
+          .catch((err) => {
+            window.log(
+              "⚠️ [Android] Failed to update notification: " + err.message,
+            );
+          });
+      }
     }
 
     // Try to start audio now that call is active
@@ -595,7 +657,6 @@ window.setupSessionHandlers = function (session) {
     startCallTimer();
     document.getElementById("callStatus").textContent = "Call in progress";
 
-    const isIOS = window.Capacitor?.getPlatform() === "ios";
     if (isIOS && !callKitAudioSessionActive) {
       window.pendingAudioStart = true;
     } else {

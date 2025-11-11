@@ -126,7 +126,7 @@ window.dismissIncomingCallNotification = async function () {
   }
 };
 
-window.reportCallConnected = async function () {
+window.reportCallConnected = async function (isOutgoing = false) {
   try {
     if (
       window.Capacitor &&
@@ -141,7 +141,7 @@ window.reportCallConnected = async function () {
         const platform = window.getPlatform();
         if (platform === "ios" && CallService.reportCallConnected) {
           // iOS - report call as connected to stop CallKit ringtone
-          await CallService.reportCallConnected();
+          await CallService.reportCallConnected({ isOutgoing: isOutgoing });
           window.log("Call reported as connected to CallKit");
         } else {
           // Android - dismiss notification to stop vibration/ringing
@@ -358,6 +358,13 @@ window.handleNotificationAction = function (action, data) {
       window.__updatingHoldFromCallKit = true;
       window.toggleHold();
       window.__updatingHoldFromCallKit = false;
+    }
+  } else if (action === "PLAY_DTMF") {
+    window.log("🔢 [CallKit] DTMF digit pressed in CallKit: " + data);
+    if (data && window.sendDTMF) {
+      window.sendDTMF(data);
+    } else {
+      window.log("⚠️ No DTMF data or sendDTMF function not available");
     }
   }
 };

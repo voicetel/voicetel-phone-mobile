@@ -19,13 +19,17 @@ public class CallForegroundService extends Service {
     private static final String TAG = "CallForegroundService";
     private static final String CHANNEL_ID = "voicetel_call_channel";
     private static final int NOTIFICATION_ID = 1;
-    
+
     private PowerManager.WakeLock wakeLock;
     private AudioManager audioManager;
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
     private boolean hasAudioFocus = false;
     private String callNumber = "";
     private boolean isCallActive = false;
+    private String callState = "dialing"; // dialing, ringing, connecting, connected, on_hold
+    private boolean isMuted = false;
+    private boolean isOnHold = false;
+    private long callStartTime = 0;
 
     // Binder for clients to access the service
     public class LocalBinder extends Binder {
@@ -40,13 +44,13 @@ public class CallForegroundService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "Service created");
-        
+
         // Create notification channel
         createNotificationChannel();
-        
+
         // Initialize audio manager
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        
+
         // Set up audio focus listener
         audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -70,41 +74,57 @@ public class CallForegroundService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
-        
-        // Get call number from intent
+
+        // Get call number and state from intent
         if (intent != null) {
             callNumber = intent.getStringExtra("callNumber");
             if (callNumber == null) {
                 callNumber = "Active Call";
             }
+
+            String newState = intent.getStringExtra("callState");
+            if (newState != null) {
+                callState = newState;
+                if ("connected".equals(newState) && callStartTime == 0) {
+                    callStartTime = System.currentTimeMillis();
+                }
+            }
+
+            if (intent.hasExtra("isMuted")) {
+                isMuted = intent.getBooleanExtra("isMuted", false);
+            }
+
+            if (intent.hasExtra("isOnHold")) {
+                isOnHold = intent.getBooleanExtra("isOnHold", false);
+            }
         }
-        
+
         // Start foreground with notification
         startForeground(NOTIFICATION_ID, createNotification());
-        
+
         // Acquire wake lock
         acquireWakeLock();
-        
+
         // Request audio focus
         requestAudioFocus();
-        
+
         isCallActive = true;
-        
+
         return START_STICKY; // Restart if killed
     }
 
     @Override
     public void onDestroy() {
         Log.d(TAG, "Service destroyed");
-        
+
         // Release wake lock
         releaseWakeLock();
-        
+
         // Abandon audio focus
         abandonAudioFocus();
-        
+
         isCallActive = false;
-        
+
         super.onDestroy();
     }
 
@@ -124,7 +144,7 @@ public class CallForegroundService extends Service {
             channel.setShowBadge(false);
             channel.setSound(null, null); // No sound
             channel.enableVibration(false);
-            
+
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
@@ -156,17 +176,104 @@ public class CallForegroundService extends Service {
             PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
 
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        // Create mute/unmute action
+        Intent muteIntent = new Intent(this, MainActivity.class);
+        muteIntent.setAction(isMuted ? "com.voicetel.phone.UNMUTE" : "com.voicetel.phone.MUTE");
+        PendingIntent mutePendingIntent = PendingIntent.getActivity(
+            this,
+            2,
+            muteIntent,
+            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        // Create hold/unhold action
+        Intent holdIntent = new Intent(this, MainActivity.class);
+        holdIntent.setAction(isOnHold ? "com.voicetel.phone.UNHOLD" : "com.voicetel.phone.HOLD");
+        PendingIntent holdPendingIntent = PendingIntent.getActivity(
+            this,
+            3,
+            holdIntent,
+            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        // Build notification text based on state
+        String contentText = buildNotificationText();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("VoiceTel Call")
-            .setContentText(callNumber.isEmpty() ? "Active Call" : "Call: " + callNumber)
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_menu_call)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_LOW) // Low priority - no heads-up
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .setShowWhen(false)
-            .build();
+            .setShowWhen(false);
+
+        // Add action buttons for connected calls
+        if ("connected".equals(callState)) {
+            builder.addAction(
+                isMuted ? android.R.drawable.ic_lock_silent_mode_off : android.R.drawable.ic_lock_silent_mode,
+                isMuted ? "Unmute" : "Mute",
+                mutePendingIntent
+            );
+            builder.addAction(
+                android.R.drawable.ic_media_pause,
+                isOnHold ? "Resume" : "Hold",
+                holdPendingIntent
+            );
+        }
+
+        // Always add hangup button
+        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Hang Up", hangupPendingIntent);
+
+        return builder.build();
+    }
+
+    private String buildNotificationText() {
+        StringBuilder text = new StringBuilder();
+
+        // Add number/name
+        if (!callNumber.isEmpty() && !"Active Call".equals(callNumber)) {
+            text.append(callNumber);
+        }
+
+        // Add state
+        if ("dialing".equals(callState)) {
+            if (text.length() > 0) text.append(" • ");
+            text.append("Dialing...");
+        } else if ("ringing".equals(callState)) {
+            if (text.length() > 0) text.append(" • ");
+            text.append("Ringing...");
+        } else if ("connecting".equals(callState)) {
+            if (text.length() > 0) text.append(" • ");
+            text.append("Connecting...");
+        } else if ("connected".equals(callState)) {
+            // Add call duration
+            if (callStartTime > 0) {
+                long duration = (System.currentTimeMillis() - callStartTime) / 1000;
+                long minutes = duration / 60;
+                long seconds = duration % 60;
+                if (text.length() > 0) text.append(" • ");
+                text.append(String.format("%02d:%02d", minutes, seconds));
+            }
+
+            // Add mute/hold status
+            if (isOnHold) {
+                text.append(" • On Hold");
+            } else if (isMuted) {
+                text.append(" • Muted");
+            }
+        } else if ("on_hold".equals(callState)) {
+            if (text.length() > 0) text.append(" • ");
+            text.append("On Hold");
+        }
+
+        if (text.length() == 0) {
+            text.append("Active Call");
+        }
+
+        return text.toString();
     }
 
     private void acquireWakeLock() {
@@ -198,7 +305,7 @@ public class CallForegroundService extends Service {
                 AudioManager.STREAM_VOICE_CALL,
                 AudioManager.AUDIOFOCUS_GAIN
             );
-            
+
             hasAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
             Log.d(TAG, "Audio focus requested: " + (hasAudioFocus ? "granted" : "denied"));
         }
@@ -214,6 +321,28 @@ public class CallForegroundService extends Service {
 
     public void updateCallNumber(String number) {
         callNumber = number;
+        updateNotification();
+    }
+
+    public void updateCallState(String state) {
+        callState = state;
+        if ("connected".equals(state) && callStartTime == 0) {
+            callStartTime = System.currentTimeMillis();
+        }
+        updateNotification();
+    }
+
+    public void updateMuteState(boolean muted) {
+        isMuted = muted;
+        updateNotification();
+    }
+
+    public void updateHoldState(boolean onHold) {
+        isOnHold = onHold;
+        updateNotification();
+    }
+
+    private void updateNotification() {
         if (isCallActive) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
@@ -226,4 +355,3 @@ public class CallForegroundService extends Service {
         return isCallActive;
     }
 }
-

@@ -195,18 +195,38 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     @objc public func reportCallConnected(_ call: CAPPluginCall) {
-        // This stops CallKit's ringtone by fulfilling an answer action
-        if let callUUID = currentCallUUID {
-            let answerAction = CXAnswerCallAction(call: callUUID)
-            let transaction = CXTransaction(action: answerAction)
+        // For incoming calls: This stops CallKit's ringtone by fulfilling an answer action
+        // For outgoing calls: This reports the call as connected
+        if let callUUID = currentCallUUID, let provider = callProvider {
+            let isOutgoing = call.getBool("isOutgoing") ?? false
 
-            callController?.request(transaction) { error in
-                if let error = error {
-                    call.reject("Failed to report call connected: \(error.localizedDescription)")
-                } else {
-                    call.resolve(["success": true])
+            if isOutgoing {
+                // For outgoing calls, report that the call connected
+                provider.reportOutgoingCall(with: callUUID, connectedAt: Date())
+                call.resolve(["success": true])
+            } else {
+                // For incoming calls, fulfill the answer action to stop ringtone
+                let answerAction = CXAnswerCallAction(call: callUUID)
+                let transaction = CXTransaction(action: answerAction)
+
+                callController?.request(transaction) { error in
+                    if let error = error {
+                        call.reject("Failed to report call connected: \(error.localizedDescription)")
+                    } else {
+                        call.resolve(["success": true])
+                    }
                 }
             }
+        } else {
+            call.resolve(["success": false, "message": "No active call"])
+        }
+    }
+
+    @objc public func reportOutgoingCallStartedConnecting(_ call: CAPPluginCall) {
+        // Report that the remote party is ringing (180 Ringing received)
+        if let callUUID = currentCallUUID, let provider = callProvider {
+            provider.reportOutgoingCall(with: callUUID, startedConnectingAt: Date())
+            call.resolve(["success": true])
         } else {
             call.resolve(["success": false, "message": "No active call"])
         }
@@ -267,10 +287,10 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         callUpdate.remoteHandle = action.handle
         callUpdate.hasVideo = false
         callUpdate.localizedCallerName = action.handle.value
-        callUpdate.supportsGrouping = false
-        callUpdate.supportsUngrouping = false
         callUpdate.supportsHolding = true
         callUpdate.supportsDTMF = true
+        callUpdate.supportsGrouping = false
+        callUpdate.supportsUngrouping = false
 
         // Report the call update
         callProvider?.reportCall(with: action.callUUID, updated: callUpdate)
@@ -328,6 +348,12 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         action.fulfill()
     }
 
+    public func provider(_ provider: CXProvider, perform action: CXPlayDTMFCallAction) {
+        let digit = action.digits
+        notifyBridge(action: "PLAY_DTMF", data: digit)
+        action.fulfill()
+    }
+
     public func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
         if audioSessionActivated {
             return
@@ -356,7 +382,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         notifyBridge(action: "AUDIO_SESSION_DEACTIVATED")
     }
 
-    private func notifyBridge(action: String, retryCount: Int = 0) {
+    private func notifyBridge(action: String, data: String? = nil, retryCount: Int = 0) {
         DispatchQueue.main.async {
             if let bridge = self.bridge {
                 // For AUDIO_SESSION_ACTIVATED, set the flag directly AND call the handler
@@ -366,9 +392,10 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
                 }
 
                 // Try to call the handler function
+                let dataParam = data != nil ? "'\(data!)'" : "null"
                 let checkAndCallJS = """
                 if (typeof window !== 'undefined' && typeof window.handleNotificationAction === 'function') {
-                    window.handleNotificationAction('\(action)', null);
+                    window.handleNotificationAction('\(action)', \(dataParam));
                     true;
                 } else {
                     false;
@@ -378,7 +405,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
                 bridge.webView?.evaluateJavaScript(checkAndCallJS) { result, error in
                     if let success = result as? Bool, !success, retryCount < 5 {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            self.notifyBridge(action: action, retryCount: retryCount + 1)
+                            self.notifyBridge(action: action, data: data, retryCount: retryCount + 1)
                         }
                     }
                 }

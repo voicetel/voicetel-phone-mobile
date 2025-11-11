@@ -31,9 +31,9 @@ public class MainActivity extends BridgeActivity {
         // In Capacitor 7, registerPlugin() must be called before bridge initialization
         registerPlugin(CallServicePlugin.class);
         Log.d(TAG, "CallServicePlugin registered");
-        
+
         super.onCreate(savedInstanceState);
-        
+
         // Request notification permission for Android 13+ (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -48,7 +48,7 @@ public class MainActivity extends BridgeActivity {
                 Log.d(TAG, "POST_NOTIFICATIONS permission already granted");
             }
         }
-        
+
         // Request RECORD_AUDIO permission for call recording
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -61,19 +61,19 @@ public class MainActivity extends BridgeActivity {
         } else {
             Log.d(TAG, "RECORD_AUDIO permission already granted");
         }
-        
+
         Log.d(TAG, "MainActivity onCreate completed");
-        
+
         // Create incoming call notification channel
         createIncomingCallNotificationChannel();
-        
+
         // Handle intents from notifications
         Intent intent = getIntent();
         if (intent != null) {
             handleNotificationIntents(intent);
         }
     }
-    
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -96,13 +96,13 @@ public class MainActivity extends BridgeActivity {
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        
+
         // Handle intents from notifications
         if (intent != null) {
             handleNotificationIntents(intent);
         }
     }
-    
+
     private void handleNotificationIntents(Intent intent) {
         String action = intent.getAction();
         if (action != null) {
@@ -115,6 +115,18 @@ public class MainActivity extends BridgeActivity {
             } else if ("com.voicetel.phone.HANGUP".equals(action)) {
                 Log.d(TAG, "Hangup intent received from notification");
                 sendMessageToJavaScript("HANGUP", null);
+            } else if ("com.voicetel.phone.MUTE".equals(action)) {
+                Log.d(TAG, "Mute intent received from notification");
+                sendMessageToJavaScript("MUTE_CALL", null);
+            } else if ("com.voicetel.phone.UNMUTE".equals(action)) {
+                Log.d(TAG, "Unmute intent received from notification");
+                sendMessageToJavaScript("UNMUTE_CALL", null);
+            } else if ("com.voicetel.phone.HOLD".equals(action)) {
+                Log.d(TAG, "Hold intent received from notification");
+                sendMessageToJavaScript("HOLD_CALL", null);
+            } else if ("com.voicetel.phone.UNHOLD".equals(action)) {
+                Log.d(TAG, "Unhold intent received from notification");
+                sendMessageToJavaScript("UNHOLD_CALL", null);
             }
         } else if (intent.getBooleanExtra("fromNotification", false)) {
             Log.d(TAG, "Activity resumed from notification (onNewIntent) - injecting JavaScript flag to skip re-registration");
@@ -146,7 +158,7 @@ public class MainActivity extends BridgeActivity {
             });
         }
     }
-    
+
     private void createIncomingCallNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -158,7 +170,7 @@ public class MainActivity extends BridgeActivity {
             channel.setShowBadge(true);
             channel.enableVibration(true);
             channel.enableLights(true);
-            
+
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
@@ -166,10 +178,10 @@ public class MainActivity extends BridgeActivity {
             }
         }
     }
-    
+
     public void showIncomingCallNotification(String callerName, String callerNumber) {
         Log.d(TAG, "Showing incoming call notification for: " + callerName + " " + callerNumber);
-        
+
         // Create intent for opening app (Answer action)
         Intent answerIntent = new Intent(this, MainActivity.class);
         answerIntent.setAction("com.voicetel.phone.ANSWER_CALL");
@@ -180,7 +192,7 @@ public class MainActivity extends BridgeActivity {
             answerIntent,
             PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
-        
+
         // Create intent for declining call
         Intent declineIntent = new Intent(this, MainActivity.class);
         declineIntent.setAction("com.voicetel.phone.DECLINE_CALL");
@@ -191,7 +203,7 @@ public class MainActivity extends BridgeActivity {
             declineIntent,
             PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
-        
+
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, INCOMING_CALL_CHANNEL_ID)
             .setContentTitle("Incoming Call")
@@ -207,14 +219,14 @@ public class MainActivity extends BridgeActivity {
             .setSound(null) // We'll use vibration instead
             .setVibrate(new long[]{0, 250, 250, 250})
             .setLights(0xFF0000FF, 500, 500);
-        
+
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager != null) {
             notificationManager.notify(INCOMING_CALL_NOTIFICATION_ID, builder.build());
             Log.d(TAG, "Incoming call notification displayed");
         }
     }
-    
+
     public void dismissIncomingCallNotification() {
         Log.d(TAG, "Dismissing incoming call notification");
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -223,7 +235,7 @@ public class MainActivity extends BridgeActivity {
             Log.d(TAG, "Incoming call notification dismissed");
         }
     }
-    
+
     private void sendMessageToJavaScript(String action, String data) {
         runOnUiThread(() -> {
             getBridge().getWebView().postDelayed(() -> {
@@ -252,12 +264,46 @@ public class MainActivity extends BridgeActivity {
         if (callNumber != null && !callNumber.isEmpty()) {
             serviceIntent.putExtra("callNumber", callNumber);
         }
+        serviceIntent.putExtra("callState", "dialing");
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent);
         } else {
             startService(serviceIntent);
         }
         Log.d(TAG, "Call service started for: " + callNumber);
+    }
+
+    public void updateCallState(String state) {
+        Intent serviceIntent = new Intent(this, CallForegroundService.class);
+        serviceIntent.putExtra("callState", state);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        Log.d(TAG, "Call state updated: " + state);
+    }
+
+    public void updateCallMuted(boolean muted) {
+        Intent serviceIntent = new Intent(this, CallForegroundService.class);
+        serviceIntent.putExtra("isMuted", muted);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        Log.d(TAG, "Call mute state updated: " + muted);
+    }
+
+    public void updateCallHeld(boolean onHold) {
+        Intent serviceIntent = new Intent(this, CallForegroundService.class);
+        serviceIntent.putExtra("isOnHold", onHold);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        Log.d(TAG, "Call hold state updated: " + onHold);
     }
 
     public void stopCallService() {
@@ -295,47 +341,47 @@ public class MainActivity extends BridgeActivity {
         if (!recordingsDir.exists()) {
             recordingsDir.mkdirs();
         }
-        
+
         // Create the file
         java.io.File recordingFile = new java.io.File(recordingsDir, filename);
-        
+
         // Decode base64 data
         byte[] audioData = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
-        
+
         // Write to file
         java.io.FileOutputStream fos = new java.io.FileOutputStream(recordingFile);
         fos.write(audioData);
         fos.close();
-        
+
         Log.d(TAG, "Recording saved: " + recordingFile.getAbsolutePath());
-        
+
         return recordingFile.getAbsolutePath();
     }
-    
+
     public String saveRecordingFileWithConversion(String filename, String base64Data, String mimeType, String targetFormat) throws Exception {
         // For now, save as-is and log conversion request
         // TODO: Implement format conversion using ffmpeg or LAME library
         // This would require adding dependencies like ffmpeg-android or LAME encoder
         Log.d(TAG, "Conversion requested: " + mimeType + " -> " + targetFormat);
         Log.d(TAG, "Note: Format conversion not yet implemented. Saving in original format.");
-        
+
         // For MP3 conversion, you would need to:
         // 1. Add ffmpeg-android library or LAME encoder
         // 2. Decode the input file
         // 3. Re-encode to MP3
         // 4. Save with new extension
-        
+
         return saveRecordingFile(filename, base64Data, mimeType);
     }
 
     public String getRecordingFileUrl(String filename) throws Exception {
         java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
         java.io.File recordingFile = new java.io.File(recordingsDir, filename);
-        
+
         if (!recordingFile.exists()) {
             throw new Exception("Recording file not found: " + filename);
         }
-        
+
         // Use FileProvider for secure file access in WebView
         try {
             Uri fileUri = FileProvider.getUriForFile(
@@ -357,20 +403,20 @@ public class MainActivity extends BridgeActivity {
     public String getRecordingFileAsDataUrl(String filename) throws Exception {
         java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
         java.io.File recordingFile = new java.io.File(recordingsDir, filename);
-        
+
         if (!recordingFile.exists()) {
             throw new Exception("Recording file not found: " + filename);
         }
-        
+
         // Read file content
         java.io.FileInputStream fis = new java.io.FileInputStream(recordingFile);
         byte[] fileBytes = new byte[(int) recordingFile.length()];
         fis.read(fileBytes);
         fis.close();
-        
+
         // Convert to base64
         String base64 = android.util.Base64.encodeToString(fileBytes, android.util.Base64.NO_WRAP);
-        
+
         // Determine MIME type from extension
         String mimeType = "audio/webm"; // default
         String lowerFilename = filename.toLowerCase();
@@ -385,7 +431,7 @@ public class MainActivity extends BridgeActivity {
         } else if (lowerFilename.endsWith(".wav")) {
             mimeType = "audio/wav";
         }
-        
+
         // Return data URL
         String dataUrl = "data:" + mimeType + ";base64," + base64;
         Log.d(TAG, "Converted file to data URL, size: " + fileBytes.length + " bytes");
@@ -395,7 +441,7 @@ public class MainActivity extends BridgeActivity {
     public boolean deleteRecordingFile(String filename) throws Exception {
         java.io.File recordingsDir = new java.io.File(getExternalFilesDir(null), "CallRecordings");
         java.io.File recordingFile = new java.io.File(recordingsDir, filename);
-        
+
         if (recordingFile.exists()) {
             boolean deleted = recordingFile.delete();
             Log.d(TAG, "Recording file deleted: " + filename + " (" + deleted + ")");

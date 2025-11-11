@@ -72,20 +72,23 @@ window.toggleMute = function () {
   document.getElementById("muteBtn").textContent = isMuted ? "Unmute" : "Mute";
   window.log(window.isMuted ? "Muted" : "Unmuted");
 
-  // iOS only: Update CallKit mute state (but only if not already updating from CallKit)
+  // Update native platform mute state (but only if not already updating from native)
   const isIOS = window.Capacitor?.getPlatform() === "ios";
+  const isAndroid = window.Capacitor?.getPlatform() === "android";
+
   if (
-    isIOS &&
     window.Capacitor?.Plugins?.CallService &&
     !window.__updatingMuteFromCallKit
   ) {
     window.Capacitor.Plugins.CallService.setCallMuted({ muted: window.isMuted })
       .then(() => {
-        window.log(`✅ [iOS] CallKit mute state updated: ${window.isMuted}`);
+        window.log(
+          `✅ [${isIOS ? "iOS" : "Android"}] Native mute state updated: ${window.isMuted}`,
+        );
       })
       .catch((err) => {
         window.log(
-          `⚠️ [iOS] Failed to update CallKit mute state: ${err.message}`,
+          `⚠️ [${isIOS ? "iOS" : "Android"}] Failed to update native mute state: ${err.message}`,
         );
       });
   }
@@ -95,45 +98,91 @@ window.toggleHold = function () {
   if (!window.currentSession || !currentSession.sessionDescriptionHandler)
     return;
 
-  const pc = currentSession.sessionDescriptionHandler.peerConnection;
-
   // Toggle the hold state first
   window.isOnHold = !isOnHold;
 
-  // Get all senders (audio and video)
-  const senders = pc.getSenders();
-
-  senders.forEach((sender) => {
-    if (sender.track) {
-      // When on hold, disable the track; when resuming, enable it
-      sender.track.enabled = !window.isOnHold;
-    }
-  });
-
-  // Update UI
-  const holdBtn = document.getElementById("holdBtn");
-  if (holdBtn) {
-    holdBtn.textContent = window.isOnHold ? "Resume" : "Hold";
-  }
-  window.log(window.isOnHold ? "Call on hold" : "Call resumed");
-
-  // iOS only: Update CallKit hold state (but only if not already updating from CallKit)
-  const isIOS = window.Capacitor?.getPlatform() === "ios";
-  if (
-    isIOS &&
-    window.Capacitor?.Plugins?.CallService &&
-    !window.__updatingHoldFromCallKit
-  ) {
-    window.Capacitor.Plugins.CallService.setCallHeld({
-      onHold: window.isOnHold,
-    })
+  // Use SIP.js hold/unhold methods to send proper re-INVITE
+  if (window.isOnHold) {
+    window.log("📞 Placing call on hold (sending re-INVITE)...");
+    currentSession
+      .hold()
       .then(() => {
-        window.log(`✅ [iOS] CallKit hold state updated: ${window.isOnHold}`);
+        window.log("✅ Call placed on hold successfully");
+        // Update UI
+        const holdBtn = document.getElementById("holdBtn");
+        if (holdBtn) {
+          holdBtn.textContent = "Resume";
+        }
+
+        // Update native platform hold state
+        const isIOS = window.Capacitor?.getPlatform() === "ios";
+        const isAndroid = window.Capacitor?.getPlatform() === "android";
+
+        if (
+          window.Capacitor?.Plugins?.CallService &&
+          !window.__updatingHoldFromCallKit
+        ) {
+          window.Capacitor.Plugins.CallService.setCallHeld({
+            onHold: true,
+          })
+            .then(() => {
+              window.log(
+                `✅ [${isIOS ? "iOS" : "Android"}] Native hold state updated: true`,
+              );
+            })
+            .catch((err) => {
+              window.log(
+                `⚠️ [${isIOS ? "iOS" : "Android"}] Failed to update native hold state: ${err.message}`,
+              );
+            });
+        }
       })
-      .catch((err) => {
-        window.log(
-          `⚠️ [iOS] Failed to update CallKit hold state: ${err.message}`,
-        );
+      .catch((error) => {
+        window.log(`❌ Failed to place call on hold: ${error.message}`);
+        console.error("Hold error:", error);
+        // Revert state on failure
+        window.isOnHold = false;
+      });
+  } else {
+    window.log("📞 Resuming call (sending re-INVITE)...");
+    currentSession
+      .unhold()
+      .then(() => {
+        window.log("✅ Call resumed successfully");
+        // Update UI
+        const holdBtn = document.getElementById("holdBtn");
+        if (holdBtn) {
+          holdBtn.textContent = "Hold";
+        }
+
+        // Update native platform hold state
+        const isIOS = window.Capacitor?.getPlatform() === "ios";
+        const isAndroid = window.Capacitor?.getPlatform() === "android";
+
+        if (
+          window.Capacitor?.Plugins?.CallService &&
+          !window.__updatingHoldFromCallKit
+        ) {
+          window.Capacitor.Plugins.CallService.setCallHeld({
+            onHold: false,
+          })
+            .then(() => {
+              window.log(
+                `✅ [${isIOS ? "iOS" : "Android"}] Native hold state updated: false`,
+              );
+            })
+            .catch((err) => {
+              window.log(
+                `⚠️ [${isIOS ? "iOS" : "Android"}] Failed to update native hold state: ${err.message}`,
+              );
+            });
+        }
+      })
+      .catch((error) => {
+        window.log(`❌ Failed to resume call: ${error.message}`);
+        console.error("Unhold error:", error);
+        // Revert state on failure
+        window.isOnHold = true;
       });
   }
 };
