@@ -1,31 +1,31 @@
 {
-	"name": "voicetel-phone",
-	"version": "3.5.6",
-	"description": "VoiceTel Phone",
-	"scripts": {},
-	"keywords": [
-		"voip",
-		"sip",
-		"webrtc",
-		"phone"
-	],
-	"author": {
-		"name": "VoiceTel",
-		"email": "support@voicetel.com",
-		"url": "http://www.voicetel.com"
-	},
-	"homepage": "https://github.com/voicetel/voicetel-phone-mobile",
-	"license": "MIT",
-	"devDependencies": {
-		"@capacitor/ios": "^7.4.4",
-		"typescript": "^5.9.3"
-	},
-	"dependencies": {
-		"@capacitor-community/contacts": "^7.0.0",
-		"@capacitor/android": "^7.4.4",
-		"@capacitor/app": "^7.1.0",
-		"@capacitor/cli": "^7.4.4",
-		"@capacitor/filesystem": "^7.1.4",
-		"cordova-plugin-iosrtc": "^8.0.4"
-	}
+  "name": "voicetel-phone",
+  "version": "3.5.6.2",
+  "description": "VoiceTel Phone",
+  "scripts": {},
+  "keywords": [
+    "voip",
+    "sip",
+    "webrtc",
+    "phone"
+  ],
+  "author": {
+    "name": "VoiceTel",
+    "email": "support@voicetel.com",
+    "url": "http://www.voicetel.com"
+  },
+  "homepage": "https://github.com/voicetel/voicetel-phone-mobile",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/ios": "^7.4.4",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@capacitor-community/contacts": "^7.0.0",
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/filesystem": "^7.1.4",
+    "cordova-plugin-iosrtc": "^8.0.4"
+  }
 }
