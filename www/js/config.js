@@ -12,7 +12,7 @@ window.SIP_REGISTRATION_EXPIRES_SEC = 180;
 window.USERNAME_LENGTH = 10;
 
 // Application Version
-window.APP_VERSION = window.VOICETEL_VERSION || "3.5.6";
+window.APP_VERSION = window.VOICETEL_VERSION || "3.5.6.2";
 
 // SIP Server Configuration
 window.SIP_DOMAIN = window.VOICETEL_SIP_DOMAIN || "tls.voicetel.com";

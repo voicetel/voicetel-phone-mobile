@@ -1,7 +1,7 @@
 # VoiceTel Phone - JavaScript API Documentation
 
-**Version:** 3.5.6  
-**Last Updated:** November 10, 2024
+**Version:** 3.5.6.2  
+**Last Updated:** November 11, 2024
 
 This document provides a comprehensive reference for all JavaScript functions and modules in the VoiceTel Phone application.
 
@@ -21,22 +21,33 @@ This document provides a comprehensive reference for all JavaScript functions an
 - [Call History](#call-history)
 - [Call Recording](#call-recording)
 - [Native Integration](#native-integration)
+- [iOS WebRTC Initialization](#ios-webrtc-initialization)
 - [Event Handlers](#event-handlers)
+- [Call Controls](#call-controls)
 
 ---
 
 ## Architecture Overview
 
-The application uses a modular JavaScript architecture with 16 separate modules loaded dynamically in dependency order:
+The application uses a modular JavaScript architecture with 17 separate modules loaded dynamically in dependency order:
 
 ```
-loader.js → config.js → helpers.js → storage.js → globals.js → ui-manager.js
-→ audio.js → native-integration.js → recording.js → call-controls.js
+loader.js → iosrtc-init.js → config.js → helpers.js → storage.js → globals.js 
+→ ui-manager.js → audio.js → native-integration.js → recording.js → call-controls.js
 → contacts.js → history.js → sip-manager.js → call-handler.js
 → event-handlers.js → app.js
 ```
 
 All functions are exposed on the global `window` object for cross-module communication.
+
+### Key Architectural Features
+
+- **Modular Design:** Each module has a single responsibility and clear dependencies
+- **Dynamic Loading:** Scripts load sequentially to ensure dependency availability
+- **Native Integration:** Unified CallService plugin for iOS (Swift) and Android (Java)
+- **iOS CallKit Support:** Native call interface with system-level integration
+- **Android Foreground Service:** Background call continuity with persistent notifications
+- **Promise-Based State Management:** Registration and unregistration use promises to prevent race conditions
 
 ---
 
@@ -72,10 +83,10 @@ Defines global constants for the application.
 
 | Constant | Type | Value | Description |
 |----------|------|-------|-------------|
-| `window.APP_VERSION` | string | "3.5.6" | Application version |
+| `window.APP_VERSION` | string | "3.5.6.2" | Application version |
 | `window.SIP_DOMAIN` | string | "tls.voicetel.com" | SIP domain |
 | `window.SIP_SERVER` | string | "wss://tls.voicetel.com:443" | WebSocket SIP server URL |
-| `window.SIP_REGISTRATION_EXPIRES_SEC` | number | 300 | SIP registration expiry in seconds |
+| `window.SIP_REGISTRATION_EXPIRES_SEC` | number | 180 | SIP registration expiry in seconds (reduced for faster failure detection) |
 | `window.USERNAME_LENGTH` | number | 10 | Required username length |
 | `window.INCOMING_CALL_TIMEOUT_MS` | number | 30000 | Auto-decline timeout (30s) |
 | `window.DTMF_DURATION_MS` | number | 250 | DTMF tone duration |
@@ -98,6 +109,8 @@ Defines application state variables.
 | `window.incomingSession` | object/null | null | Incoming call session |
 | `window.isRegistered` | boolean | false | SIP registration status |
 | `window.registeredUsername` | string/null | null | Currently registered username |
+| `window.registrationPromise` | Promise/null | null | Current registration promise (prevents concurrent registrations) |
+| `window.unregistrationPromise` | Promise/null | null | Current unregistration promise |
 | `window.isMuted` | boolean | false | Call mute status |
 | `window.activeCall` | boolean | false | Active call flag |
 | `window.contactsList` | array | [] | Loaded device contacts |
@@ -331,6 +344,7 @@ Manages audio playback and ringing.
 
 ### call-handler.js
 
+Manages incoming and outgoing SIP call sessions with native platform integration.
 Manages call lifecycle and WebRTC media.
 
 #### Functions
@@ -372,6 +386,7 @@ Manages call lifecycle and WebRTC media.
 
 ### sip-manager.js
 
+Manages SIP user agent and registration lifecycle with race condition prevention.
 Manages SIP registration and re-registration.
 
 #### Functions
@@ -497,9 +512,31 @@ Manages call recording functionality.
 
 ### native-integration.js
 
-Integrates with Capacitor native plugins.
+Handles communication with native iOS and Android code through the unified CallService plugin.
+
+#### Native Platform Support
+
+**iOS (CallKit Integration)**
+- Native call interface appears on lock screen and as system notification
+- Automatic audio routing (speaker, Bluetooth, earpiece)
+- System-level call management with native UI
+- Proper state reporting for outgoing calls (dialing, ringing, connecting, connected)
+- Hold functionality integrated with native call controls
+- Uses `reportOutgoingCallStartedConnecting()` for ringing state
+- Uses `provider.reportOutgoingCall(connectedAt:)` for connected state
+- Incoming calls use `CXAnswerCallAction` which automatically stops ringtone
+
+**Android (Foreground Service)**
+- Persistent notification prevents app termination during calls
+- Interactive notification buttons (Mute/Unmute, Hold/Resume)
+- Real-time call duration display (MM:SS format)
+- Dynamic state display (dialing, ringing, connecting, connected, on_hold)
+- Bidirectional sync between app UI and notification actions
+- Notification actions trigger JavaScript callbacks for state updates
 
 #### Functions
+
+**Platform-Agnostic Functions**
 
 **`window.setupAppStateListeners()`**
 - **Description:** Sets up app state change listeners (foreground/background)
@@ -540,9 +577,95 @@ Integrates with Capacitor native plugins.
 - **Platform:** Android only
 
 **`reportCallConnected()`**
-- **Description:** Reports call connected to CallKit (stops ringtone)
+- **Description:** Reports call connected to CallKit and updates Android notification
+- **Returns:** Promise<void>
+- **Platform:** iOS and Android
+- **iOS Implementation:**
+  - For outgoing calls: Uses `provider.reportOutgoingCall(uuid, connectedAt:)`
+  - For incoming calls: Triggered by `CXAnswerCallAction`
+  - Stops system ringtone automatically
+- **Android Implementation:**
+  - Updates foreground notification state to "Connected"
+  - Displays call duration timer
+  - Shows Mute and Hold action buttons
+
+**`reportOutgoingCallRinging()`**
+- **Description:** Reports that remote party is ringing (180/183 received)
 - **Returns:** Promise<void>
 - **Platform:** iOS only
+- **iOS Implementation:** Uses `reportOutgoingCallStartedConnecting()` for proper state transition
+
+**Android-Specific Notification Methods**
+
+**`updateCallState(state)`**
+- **Description:** Updates the call state displayed in Android foreground notification
+- **Parameters:**
+  - `state` (string) - One of: "dialing", "ringing", "connecting", "connected", "on_hold"
+- **Returns:** Promise<void>
+- **Platform:** Android only
+- **Side effects:** Updates notification text to show current call state
+
+**`setCallMuted(muted)`**
+- **Description:** Updates mute state in Android notification
+- **Parameters:**
+  - `muted` (boolean) - True if call is muted, false otherwise
+- **Returns:** Promise<void>
+- **Platform:** Android only
+- **Side effects:** Updates notification action button between "Mute" and "Unmute"
+
+**`setCallHeld(held)`**
+- **Description:** Updates hold state in Android notification
+- **Parameters:**
+  - `held` (boolean) - True if call is on hold, false otherwise
+- **Returns:** Promise<void>
+- **Platform:** Android only
+- **Side effects:** 
+  - Updates notification action button between "Hold" and "Resume"
+  - Updates notification state display to "on_hold" when held
+
+**`updateCallDuration(duration)`**
+- **Description:** Updates call duration display in Android notification
+- **Parameters:**
+  - `duration` (string) - Formatted duration string (e.g., "01:23")
+- **Returns:** Promise<void>
+- **Platform:** Android only
+- **Side effects:** Updates notification text with current call duration
+
+---
+
+## iOS WebRTC Initialization
+
+### iosrtc-init.js
+
+Initializes cordova-plugin-iosrtc for iOS devices to enable CallKit integration.
+
+#### Purpose
+
+Replaces the iOS WebView's limited WebRTC implementation with native iOS WebRTC APIs, enabling:
+- CallKit integration for system-level call management
+- Better audio routing and Bluetooth support
+- Native audio session handling
+- Proper background audio continuation
+
+#### Functions
+
+**`initializeIOSRTC()`**
+- **Description:** Initializes iosrtc plugin on deviceready event
+- **Returns:** void
+- **Internal use only**
+- **Sets Global:**
+  - `window.IOSRTC_ACTIVE` (boolean) - True if iosrtc successfully initialized
+  - `window.iosrtc` - Reference to iosrtc plugin
+
+#### Configuration
+
+```javascript
+iosrtc.useManualAudio = true;  // Manual audio session control
+iosrtc.isAudioEnabled = false; // Disable automatic audio
+iosrtc.registerGlobals();      // Override WebRTC globals
+```
+
+**Note:** This module loads early in the dependency chain to ensure WebRTC APIs are available before other modules need them.
 
 ---
 
@@ -573,23 +696,50 @@ Sets up all UI event listeners (replaces inline onclick handlers).
 
 ### call-controls.js
 
-Manages in-call control functions.
+Handles call control actions like mute, hold, and hangup with native platform synchronization.
 
 #### Functions
 
 **`window.hangup()`**
 - **Description:** Ends current call
 - **Side effects:** Sends BYE, clears session, stops recording, updates history
+- **Native Integration:** Reports call ended to iOS CallKit and Android notification service
 
 **`window.toggleMute()`**
 - **Description:** Toggles call mute status
-- **Side effects:** Mutes/unmutes local audio, updates UI
+- **Side effects:** Mutes/unmutes local audio, updates UI button state
+- **Native Integration:** 
+  - Reports mute state to Android notification service
+  - Updates notification action button (Mute ↔ Unmute)
+  - Synchronizes with native notification controls
+- **Implementation:** Disables/enables local audio tracks without SIP signaling
+
+**`window.toggleHold()`**
+- **Description:** Toggles call hold/resume status using proper SIP re-INVITE
+- **Side effects:** 
+  - Sends SIP re-INVITE with modified SDP
+  - Hold: Sets audio to `a=sendonly` or `a=inactive`
+  - Resume: Restores bidirectional audio with `a=sendrecv`
+  - Updates UI button state (Hold ↔ Resume)
+  - Remote party is properly notified of hold state
+- **Native Integration:**
+  - Reports hold state to iOS CallKit
+  - Reports hold state to Android notification service
+  - Updates notification action button (Hold ↔ Resume)
+  - Bidirectional sync with native controls
+- **Implementation:** Uses `session.hold()` and `session.unhold()` from SIP.js
+- **Error Handling:** 
+  - Promise-based with try/catch
+  - Reverts UI state on failure
+  - Logs errors to event log
+- **Returns:** Promise<void>
 
 **`window.sendDTMF(digit)`**
 - **Description:** Sends DTMF tone during call
 - **Parameters:**
   - `digit` (string) - Digit to send (0-9, *, #)
-- **Methods:** RFC 2833 telephone-event or SIP INFO fallback
+- **Methods:** RFC 2833 telephone-event with SIP INFO fallback
+- **Duration:** 250ms tone with 70ms inter-digit gap
 
 **`window.appendNumber(digit)`**
 - **Description:** Adds digit to dialpad input and sends DTMF if in call
@@ -601,10 +751,14 @@ Manages in-call control functions.
 
 **`startCallTimer()`**
 - **Description:** Starts call duration timer
-- **Side effects:** Updates UI every second with call duration
+- **Side effects:** 
+  - Updates UI every second with call duration (HH:MM:SS format)
+  - On Android: Calls `updateCallDuration()` to sync with notification
+- **Global:** Updates `window.callStartTime` timestamp
 
 **`stopCallTimer()`**
 - **Description:** Stops call duration timer
+- **Side effects:** Clears interval, resets call duration display
 
 **`endCall()`**
 - **Description:** Handles call termination cleanup
@@ -804,10 +958,91 @@ if (platform === "ios") {
 
 ## Version History
 
-- **3.5.6** (2024-11-10) - Modularized architecture, removed inline onclick, race condition fixes
-- **3.5.5** (2024-10-15) - Call recording improvements
+- **3.5.6.2** (2024-11-11)
+  - **Fixed hold functionality** - Now uses proper SIP.js `hold()`/`unhold()` with re-INVITE
+  - **Enhanced iOS CallKit** - Added proper state reporting for outgoing calls (dialing → ringing → connected)
+  - **Android notification enhancements:**
+    - Added Mute/Unmute action button with bidirectional sync
+    - Added Hold/Resume action button with bidirectional sync
+    - Real-time call duration display (MM:SS format)
+    - Dynamic state display (dialing, ringing, connecting, connected, on_hold)
+    - New native methods: `updateCallState()`, `setCallMuted()`, `setCallHeld()`
+  - **Bidirectional sync** - Native notification actions trigger JavaScript callbacks
+  - **iOS CallKit improvements:**
+    - Added `reportOutgoingCallRinging()` for 180/183 responses
+    - Fixed `reportCallConnected()` for proper outgoing vs incoming call handling
+    - Hold state integrated with native call controls
+- **3.5.6.1** (2024-11-10) - Fixed iOS compilation warnings, removed excessive CallKit logging
+- **3.5.6** (2024-11-10)
+  - CRITICAL: Fixed calls dropping during re-registration
+  - Implemented promise-based registration queue to prevent race conditions
+  - Re-registration now skips during active calls
+  - Reduced registration expiry to 180 seconds for faster failure detection
+  - Added CallKit support for iOS with native call interface
+  - Added Android foreground service for background call continuity
+  - Modularized architecture into 17 separate JavaScript modules
+  - Removed inline onclick handlers, improved memory management
+- **3.5.5** (2024-10-15) - Call recording improvements, fixed horizontal scrolling
 - **3.5.0** (2024-09-01) - Initial public release
 
 ---
 
 For more information, see [README.md](README.md) and [CHANGELOG.md](CHANGELOG.md).
+### Using Hold Functionality
+
+```javascript
+// During an active call, toggle hold
+await window.toggleHold();
+
+// Hold state is tracked in window.isOnHold
+if (window.isOnHold) {
+  console.log("Call is on hold");
+} else {
+  console.log("Call is active");
+}
+
+// Hold state automatically syncs with:
+// - iOS CallKit native controls
+// - Android notification Hold/Resume button
+// - App UI button state
+```
+
+### Muting a Call
+
+```javascript
+// During an active call, toggle mute
+window.toggleMute();
+
+// Mute state is tracked in window.isMuted
+if (window.isMuted) {
+  console.log("Microphone is muted");
+}
+
+// Mute state automatically syncs with:
+// - Android notification Mute/Unmute button
+// - App UI button state
+```
+
+### Reporting Call States to Native Platforms
+
+```javascript
+// When making an outgoing call
+await window.makeCall();
+// Automatically reports "dialing" state
+
+// When receiving 180/183 (ringing)
+await window.reportOutgoingCallRinging();
+// iOS: Reports to CallKit, displays "Ringing" in system UI
+// Android: Updates notification to show "Ringing"
+
+// When call connects
+await window.reportCallConnected();
+// iOS: Stops ringtone, shows "Connected" in CallKit
+// Android: Shows "Connected" with call duration and action buttons
+
+// When placing call on hold
+await window.toggleHold();
+await window.updateCallState("on_hold");
+// Android: Updates notification to show "On Hold"
+```
+
