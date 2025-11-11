@@ -76,6 +76,53 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         call.resolve(["success": true])
     }
 
+    @objc public func startOutgoingCall(_ call: CAPPluginCall) {
+        logger.error("📞 startOutgoingCall CALLED")
+
+        let callNumber = call.getString("callNumber") ?? "Unknown"
+        self.currentCallNumber = callNumber
+        logger.error("📞 Starting outgoing call to: '\(callNumber)'")
+
+        // Check if CallKit is initialized
+        guard let controller = callController else {
+            logger.error("❌ CallKit controller is nil! Cannot start outgoing call.")
+            call.reject("CallKit not initialized")
+            return
+        }
+
+        // Create a new call UUID
+        let callUUID = UUID()
+        currentCallUUID = callUUID
+
+        logger.error("📱 Created call UUID: \(callUUID.uuidString)")
+
+        // Create handle for the number being called
+        let handle = CXHandle(type: .phoneNumber, value: callNumber)
+
+        // Create start call action
+        let startCallAction = CXStartCallAction(call: callUUID, handle: handle)
+        startCallAction.isVideo = false
+
+        let transaction = CXTransaction(action: startCallAction)
+
+        logger.error("📱 Requesting CallKit to start outgoing call...")
+
+        controller.request(transaction) { error in
+            if let error = error {
+                let nsError = error as NSError
+                self.logger.error("❌ CallKit startOutgoingCall FAILED")
+                self.logger.error("   Error: \(error.localizedDescription)")
+                self.logger.error("   Domain: \(nsError.domain)")
+                self.logger.error("   Code: \(nsError.code)")
+                call.reject("Failed to start outgoing call: \(error.localizedDescription)")
+            } else {
+                self.logger.error("✅ CallKit startOutgoingCall SUCCESS!")
+                self.isCallActive = true
+                call.resolve(["success": true, "callUUID": callUUID.uuidString])
+            }
+        }
+    }
+
     @objc public func stopCall(_ call: CAPPluginCall) {
         logger.error("stopCall called - currentCallUUID: \(self.currentCallUUID?.uuidString ?? "nil"), audioSessionActivated: \(self.audioSessionActivated)")
 
@@ -273,6 +320,30 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     public func providerDidReset(_ provider: CXProvider) {
         logger.error("⚠️ CallKit provider did reset")
         currentCallUUID = nil
+    }
+
+    public func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
+        logger.error("✅ CallKit: Starting outgoing call")
+        logger.error("   Call UUID: \(action.callUUID.uuidString)")
+        logger.error("   Handle: \(action.handle.value)")
+
+        // Configure call update for outgoing call
+        let callUpdate = CXCallUpdate()
+        callUpdate.remoteHandle = action.handle
+        callUpdate.hasVideo = false
+        callUpdate.localizedCallerName = action.handle.value
+        callUpdate.supportsGrouping = false
+        callUpdate.supportsUngrouping = false
+        callUpdate.supportsHolding = false
+        callUpdate.supportsDTMF = true
+
+        // Report the call update
+        callProvider?.reportCall(with: action.callUUID, updated: callUpdate)
+
+        // Fulfill the action
+        action.fulfill()
+
+        logger.error("✅ CallKit: Outgoing call action fulfilled")
     }
 
     public func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {

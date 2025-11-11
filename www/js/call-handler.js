@@ -2,7 +2,7 @@
 // CALL HANDLER MODULE
 // ========================================
 
-window.makeCall = function () {
+window.makeCall = async function () {
   // Reset audio flags for new call
   window.audioStarted = false;
 
@@ -86,6 +86,20 @@ window.makeCall = function () {
       window.log("Caller ID privacy enabled");
     } else {
       options.extraHeaders.push("Privacy: none");
+    }
+
+    // iOS: Start CallKit outgoing call BEFORE making SIP call
+    if (isIOS && window.Capacitor?.Plugins?.CallService) {
+      try {
+        window.log("📱 [iOS] Starting CallKit outgoing call...");
+        await window.Capacitor.Plugins.CallService.startOutgoingCall({
+          callNumber: number,
+        });
+        window.log("✅ [iOS] CallKit outgoing call started");
+      } catch (err) {
+        window.log("⚠️ [iOS] Failed to start CallKit call: " + err.message);
+        // Continue anyway - fallback to non-CallKit
+      }
     }
 
     window.currentSession = userAgent.invite(uri, options);
