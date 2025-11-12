@@ -232,6 +232,27 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
         }
     }
 
+    @objc public func reportCallFailed(_ call: CAPPluginCall) {
+        // Report that the call failed (network error, rejected, etc.)
+        if let callUUID = currentCallUUID, let provider = callProvider {
+            // End the call with a failure reason
+            let endAction = CXEndCallAction(call: callUUID)
+            let transaction = CXTransaction(action: endAction)
+
+            callController?.request(transaction) { error in
+                if let error = error {
+                    print("CallServicePlugin: Failed to end call: \(error.localizedDescription)")
+                }
+            }
+
+            // Clean up
+            currentCallUUID = nil
+            call.resolve(["success": true])
+        } else {
+            call.resolve(["success": false, "message": "No active call"])
+        }
+    }
+
     @objc public func setCallMuted(_ call: CAPPluginCall) {
         guard let isMuted = call.getBool("muted") else {
             call.reject("Missing muted parameter")

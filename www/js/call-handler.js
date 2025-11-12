@@ -282,6 +282,18 @@ window.setupIncomingSessionHandlers = function (session) {
       window.Storage.addCallToHistory("missed", num, "00:00");
     }
 
+    // Notify CallKit that incoming call terminated (caller hung up before answer)
+    const isIOS = window.Capacitor?.getPlatform() === "ios";
+    if (isIOS && window.Capacitor?.Plugins?.CallService) {
+      window.Capacitor.Plugins.CallService.stopCall()
+        .then(() => {
+          window.log(
+            "✅ [iOS] CallKit notified unanswered incoming call terminated",
+          );
+        })
+        .catch(() => {});
+    }
+
     window.incomingSession = null;
   });
 
@@ -293,6 +305,19 @@ window.setupIncomingSessionHandlers = function (session) {
     window.hideIncomingCallUI();
     dismissIncomingCallNotification();
     window.log("Incoming call failed");
+
+    // Notify CallKit that unanswered incoming call failed
+    const isIOS = window.Capacitor?.getPlatform() === "ios";
+    if (isIOS && window.Capacitor?.Plugins?.CallService) {
+      window.Capacitor.Plugins.CallService.stopCall()
+        .then(() => {
+          window.log(
+            "✅ [iOS] CallKit notified unanswered incoming call failed",
+          );
+        })
+        .catch(() => {});
+    }
+
     window.incomingSession = null;
   });
 
@@ -304,6 +329,19 @@ window.setupIncomingSessionHandlers = function (session) {
     window.hideIncomingCallUI();
     dismissIncomingCallNotification();
     window.log("Incoming call was rejected");
+
+    // Notify CallKit that unanswered incoming call was rejected by remote
+    const isIOS = window.Capacitor?.getPlatform() === "ios";
+    if (isIOS && window.Capacitor?.Plugins?.CallService) {
+      window.Capacitor.Plugins.CallService.stopCall()
+        .then(() => {
+          window.log(
+            "✅ [iOS] CallKit notified unanswered incoming call rejected",
+          );
+        })
+        .catch(() => {});
+    }
+
     window.incomingSession = null;
   });
 
@@ -322,6 +360,7 @@ window.answerCall = async function () {
   const isIOS = window.Capacitor?.getPlatform() === "ios";
 
   if (isIOS && window.__answeringInProgress) {
+    window.log("⚠️ Answer already in progress, ignoring duplicate");
     return;
   }
 
@@ -340,29 +379,46 @@ window.answerCall = async function () {
     const calledFromCallKit =
       window.callKitAudioSessionActive || window.__callKitAnswered;
 
+    window.log(
+      `📱 Answering call - Called from CallKit: ${calledFromCallKit}, Audio session active: ${window.callKitAudioSessionActive}`,
+    );
+
     if (!calledFromCallKit) {
+      // User pressed RTC button, need to notify CallKit
+      window.log("📱 RTC button pressed - notifying CallKit...");
       try {
         if (window.Capacitor?.Plugins?.CallService) {
           await window.Capacitor.Plugins.CallService.reportCallConnected({
             isOutgoing: false,
           });
+          window.log("✅ CallKit notified of answer");
+          // Give CallKit a moment to activate audio session
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       } catch (err) {
-        // Failed to notify CallKit
+        window.log("⚠️ Failed to notify CallKit: " + err.message);
       }
     }
-    let audioReady = window.callKitAudioSessionActive;
-    const maxWait = 3000;
-    const startTime = Date.now();
-    let checkCount = 0;
 
-    while (!audioReady && Date.now() - startTime < maxWait) {
-      checkCount++;
-      if (window.callKitAudioSessionActive) {
-        audioReady = true;
-        break;
+    // Wait for audio session to be ready (with shorter timeout)
+    let audioReady = window.callKitAudioSessionActive;
+    const maxWait = 2000;
+    const startTime = Date.now();
+
+    if (!audioReady) {
+      window.log("⏳ Waiting for CallKit audio session...");
+      while (!audioReady && Date.now() - startTime < maxWait) {
+        if (window.callKitAudioSessionActive) {
+          audioReady = true;
+          window.log("✅ CallKit audio session ready");
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
-      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      if (!audioReady) {
+        window.log("⚠️ Timeout waiting for CallKit audio - proceeding anyway");
+      }
     }
   } else {
     // Android - report call connected to stop notification ringtone
@@ -384,9 +440,11 @@ window.answerCall = async function () {
   window.showCallControls();
   window.log("Call answered");
   window.log("SIP/2.0 200 OK");
+
   if (isIOS) {
     setTimeout(() => {
       window.__answeringInProgress = false;
+      window.log("✅ Answer process complete");
     }, 1000);
   }
 };
@@ -399,6 +457,10 @@ window.declineCall = async function () {
 
   const isIOS = window.Capacitor?.getPlatform() === "ios";
 
+  window.log(
+    `📱 Declining call - Triggered from CallKit: ${window.__decliningFromCallKit || false}`,
+  );
+
   if (window.incomingCallTimeout) {
     clearTimeout(window.incomingCallTimeout);
     window.incomingCallTimeout = null;
@@ -406,12 +468,10 @@ window.declineCall = async function () {
 
   window.stopRinging();
 
-  // iOS only: Dismiss CallKit call (but only if not triggered FROM CallKit)
-  if (isIOS && !window.__decliningFromCallKit) {
-    await dismissIncomingCallNotification();
-  }
+  // Mark as declined by user before rejecting
+  incomingSession.__declinedByUser = true;
 
-  // Record as declined (this is correct for a manual press)
+  // Record as declined
   const num =
     __incomingRaw && window.__incomingRaw !== "Unknown"
       ? __incomingRaw
@@ -420,22 +480,39 @@ window.declineCall = async function () {
         "Unknown";
   window.Storage.addCallToHistory("declined", num, "00:00");
 
-  incomingSession.__declinedByUser = true;
-
+  // Send SIP rejection
   incomingSession.reject({
     statusCode: 486,
     reasonPhrase: "Busy Here",
   });
 
-  window.hideIncomingCallUI();
   window.log("Call declined");
   window.log("SIP/2.0 486 Busy Here");
+
+  // Notify CallKit if not already done
+  if (isIOS && !window.__decliningFromCallKit) {
+    window.log("📱 RTC button pressed - notifying CallKit to end call...");
+    try {
+      if (window.Capacitor?.Plugins?.CallService) {
+        await window.Capacitor.Plugins.CallService.stopCall();
+        window.log("✅ CallKit notified of decline");
+      }
+    } catch (err) {
+      window.log("⚠️ Failed to notify CallKit: " + err.message);
+    }
+  }
+
+  window.hideIncomingCallUI();
   window.incomingSession = null;
 
   // Reset audio flags
-  window.audioStarted = false;
-  window.callKitAudioSessionActive = false;
-  window.pendingAudioStart = false;
+  if (isIOS) {
+    window.audioStarted = false;
+    window.callKitAudioSessionActive = false;
+    window.pendingAudioStart = false;
+    window.__answeringInProgress = false;
+    window.__callKitAnswered = false;
+  }
 };
 
 window.setupSessionHandlers = function (session) {
