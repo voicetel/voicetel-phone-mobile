@@ -1,512 +1,524 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-		/>
-		<title>VoiceTel Phone v3.5.6.2</title>
-		<link rel="icon" type="image/png" href="favicon.png" />
-		<link rel="stylesheet" href="css/styles.css" />
-	</head>
-	<body>
-		<div class="container">
-			<div class="header">
-				<div class="header-buttons">
-					<button class="header-toggle active" title="Phone">
-						📞
-					</button>
-					<button class="header-toggle" title="Contacts">👥</button>
-					<button class="header-toggle" title="Call History">
-						📜
-					</button>
-					<button class="header-toggle" title="Event Log">📋</button>
-					<button class="header-toggle" title="Settings">⚙️</button>
-				</div>
-				<h1>VoiceTel</h1>
-				<div id="status" class="status">Disconnected</div>
-			</div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <title>VoiceTel Phone v3.5.6.2</title>
+        <link rel="icon" type="image/png" href="favicon.png" />
+        <link rel="stylesheet" href="css/styles.css" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="header-buttons">
+                    <button class="header-toggle active" title="Phone">
+                        📞
+                    </button>
+                    <button class="header-toggle" title="Contacts">👥</button>
+                    <button class="header-toggle" title="Call History">
+                        📜
+                    </button>
+                    <button class="header-toggle" title="Event Log">📋</button>
+                    <button class="header-toggle" title="Settings">⚙️</button>
+                </div>
+                <h1>VoiceTel</h1>
+                <div id="status" class="status">Disconnected</div>
+            </div>
 
-			<div class="content">
-				<div class="section config-section" id="configSection">
-					<h2>Settings</h2>
+            <div class="content">
+                <div class="section config-section" id="configSection">
+                    <h2>Settings</h2>
 
-					<div class="button-group" style="margin-bottom: 20px">
-						<button id="registerBtn" class="btn-primary">
-							Register
-						</button>
-						<button
-							id="unregisterBtn"
-							class="btn-secondary"
-							disabled
-						>
-							Unregister
-						</button>
-					</div>
-					<input
-						type="hidden"
-						id="sipServer"
-						value="wss://tls.voicetel.com:443"
-					/>
+                    <div class="button-group" style="margin-bottom: 20px">
+                        <button id="registerBtn" class="btn-primary">
+                            Register
+                        </button>
+                        <button
+                            id="unregisterBtn"
+                            class="btn-secondary"
+                            disabled
+                        >
+                            Unregister
+                        </button>
+                    </div>
+                    <input
+                        type="hidden"
+                        id="sipServer"
+                        value="wss://tls.voicetel.com:443"
+                    />
 
-					<div class="form-group">
-						<label>
-							Username
-							<small style="color: #999"
-								>Must be exactly 10 digits (your phone
-								number)</small
-							>
-						</label>
-						<input
-							type="tel"
-							id="username"
-							placeholder="e.g. 5551234567"
-							maxlength="10"
-							pattern="[0-9]{10}"
-							required
-							inputmode="numeric"
-						/>
-						<small
-							id="usernameError"
-							style="
-								color: #d32f2f;
-								display: none;
-								margin-top: 5px;
-							"
-						>
-							Username must be exactly 10 numeric digits
-						</small>
-					</div>
+                    <div class="form-group">
+                        <label>
+                            Username
+                            <small style="color: #999"
+                                >Must be exactly 10 digits (your phone
+                                number)</small
+                            >
+                        </label>
+                        <input
+                            type="tel"
+                            id="username"
+                            placeholder="e.g. 5551234567"
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            required
+                            inputmode="numeric"
+                        />
+                        <small
+                            id="usernameError"
+                            style="
+                                color: #d32f2f;
+                                display: none;
+                                margin-top: 5px;
+                            "
+                        >
+                            Username must be exactly 10 numeric digits
+                        </small>
+                    </div>
 
-					<div class="form-group">
-						<label>Password</label>
-						<input
-							type="password"
-							id="password"
-							placeholder="password"
-						/>
-					</div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="password"
+                        />
+                    </div>
 
-					<div class="form-group">
-						<label>Display Name</label>
-						<input
-							type="text"
-							id="displayName"
-							placeholder="Your Name"
-						/>
-					</div>
+                    <div class="form-group">
+                        <label>Display Name</label>
+                        <input
+                            type="text"
+                            id="displayName"
+                            placeholder="Your Name"
+                        />
+                    </div>
 
-					<div class="form-group">
-						<label>
-							Caller ID Number
-							<small style="color: #999"
-								>Optional - North American format only (10
-								digits)</small
-							>
-						</label>
-						<input
-							type="tel"
-							id="callerID"
-							placeholder="e.g. 8005551234"
-							maxlength="10"
-							pattern="[2-9][0-9]{2}[2-9][0-9]{6}"
-							inputmode="numeric"
-						/>
-						<small
-							id="callerIDError"
-							style="
-								color: #d32f2f;
-								display: none;
-								margin-top: 5px;
-							"
-						>
-							Please enter a valid 10-digit North American phone
-							number
-						</small>
-					</div>
+                    <div class="form-group">
+                        <label>
+                            Caller ID Number
+                            <small style="color: #999"
+                                >Optional - North American format only (10
+                                digits)</small
+                            >
+                        </label>
+                        <input
+                            type="tel"
+                            id="callerID"
+                            placeholder="e.g. 8005551234"
+                            maxlength="10"
+                            pattern="[2-9][0-9]{2}[2-9][0-9]{6}"
+                            inputmode="numeric"
+                        />
+                        <small
+                            id="callerIDError"
+                            style="
+                                color: #d32f2f;
+                                display: none;
+                                margin-top: 5px;
+                            "
+                        >
+                            Please enter a valid 10-digit North American phone
+                            number
+                        </small>
+                    </div>
 
-					<div
-						class="form-group"
-						style="
-							background: #f8f8f8;
-							padding: 15px;
-							border-radius: 8px;
-							margin-top: 20px;
-						"
-					>
-						<label
-							style="
-								display: flex;
-								align-items: center;
-								cursor: pointer;
-								color: #667eea;
-								font-weight: 600;
-							"
-						>
-							<input
-								type="checkbox"
-								id="saveCredentials"
-								style="width: auto; margin-right: 8px"
-							/>
-							Save credentials
-						</label>
-						<small
-							style="color: #999; display: block; margin-top: 8px"
-						>
-							💾 Credentials are saved in local storage
-						</small>
+                    <div
+                        class="form-group"
+                        style="
+                            background: #f8f8f8;
+                            padding: 15px;
+                            border-radius: 8px;
+                            margin-top: 20px;
+                        "
+                    >
+                        <label
+                            style="
+                                display: flex;
+                                align-items: center;
+                                cursor: pointer;
+                                color: #667eea;
+                                font-weight: 600;
+                            "
+                        >
+                            <input
+                                type="checkbox"
+                                id="saveCredentials"
+                                style="width: auto; margin-right: 8px"
+                            />
+                            Save credentials
+                        </label>
+                        <small
+                            style="color: #999; display: block; margin-top: 8px"
+                        >
+                            💾 Credentials are saved in local storage
+                        </small>
 
-						<label
-							style="
-								display: flex;
-								align-items: center;
-								cursor: pointer;
-								color: #667eea;
-								font-weight: 600;
-								margin-top: 20px;
-							"
-						>
-							<input type="checkbox" id="registerOnStartup" />
-							<span>Register automatically</span>
-						</label>
-						<small
-							style="color: #999; display: block; margin-top: 8px"
-						>
-							🤖 Register automatically on startup
-						</small>
+                        <label
+                            style="
+                                display: flex;
+                                align-items: center;
+                                cursor: pointer;
+                                color: #667eea;
+                                font-weight: 600;
+                                margin-top: 20px;
+                            "
+                        >
+                            <input type="checkbox" id="registerOnStartup" />
+                            <span>Register automatically</span>
+                        </label>
+                        <small
+                            style="color: #999; display: block; margin-top: 8px"
+                        >
+                            🤖 Register automatically on startup
+                        </small>
 
-						<label
-							style="
-								display: flex;
-								align-items: center;
-								cursor: pointer;
-								color: #667eea;
-								font-weight: 600;
-								margin-top: 20px;
-							"
-						>
-							<input type="checkbox" id="enableCallRecording" />
-							<span>Enable call recording</span>
-						</label>
-						<small
-							style="color: #999; display: block; margin-top: 8px"
-						>
-							🎙️ Record calls automatically when enabled
-						</small>
-						<div
-							style="
-								color: #ff6b6b;
-								font-size: 12px;
-								margin-top: 8px;
-								padding: 8px;
-								background-color: #fff5f5;
-								border-left: 3px solid #ff6b6b;
-								border-radius: 4px;
-							"
-						>
-							⚠️ <strong>Legal Notice:</strong> Only enable call
-							recording where it is legally permitted. Recording
-							calls without consent may violate privacy laws in
-							your jurisdiction. Always inform all parties before
-							recording.
-						</div>
+                        <label
+                            style="
+                                display: flex;
+                                align-items: center;
+                                cursor: pointer;
+                                color: #667eea;
+                                font-weight: 600;
+                                margin-top: 20px;
+                            "
+                        >
+                            <input type="checkbox" id="enableCallRecording" />
+                            <span>Enable call recording</span>
+                        </label>
+                        <small
+                            style="color: #999; display: block; margin-top: 8px"
+                        >
+                            🎙️ Record calls automatically when enabled
+                        </small>
+                        <div
+                            style="
+                                color: #ff6b6b;
+                                font-size: 12px;
+                                margin-top: 8px;
+                                padding: 8px;
+                                background-color: #fff5f5;
+                                border-left: 3px solid #ff6b6b;
+                                border-radius: 4px;
+                            "
+                        >
+                            ⚠️ <strong>Legal Notice:</strong> Only enable call
+                            recording where it is legally permitted. Recording
+                            calls without consent may violate privacy laws in
+                            your jurisdiction. Always inform all parties before
+                            recording.
+                        </div>
 
-						<label
-							style="
-								display: flex;
-								align-items: center;
-								cursor: pointer;
-								color: #667eea;
-								font-weight: 600;
-								margin-top: 20px;
-							"
-						>
-							<input type="checkbox" id="hideEventLog" />
-							<span>Hide Event Log</span>
-						</label>
-						<small
-							style="color: #999; display: block; margin-top: 8px"
-						>
-							👁️ Hide the event log from the main interface
-						</small>
+                        <label
+                            style="
+                                display: flex;
+                                align-items: center;
+                                cursor: pointer;
+                                color: #667eea;
+                                font-weight: 600;
+                                margin-top: 20px;
+                            "
+                        >
+                            <input type="checkbox" id="hideEventLog" />
+                            <span>Hide Event Log</span>
+                        </label>
+                        <small
+                            style="color: #999; display: block; margin-top: 8px"
+                        >
+                            👁️ Hide the event log from the main interface
+                        </small>
 
-						<div
-							class="storage-info"
-							style="display: none"
-							id="storageInfo"
-						>
-							Settings saved locally on this device
-						</div>
+                        <div
+                            class="storage-info"
+                            style="display: none"
+                            id="storageInfo"
+                        >
+                            Settings saved locally on this device
+                        </div>
 
-						<button
-							class="btn-secondary"
-							style="
-								margin-top: 10px;
-								padding: 8px 16px;
-								font-size: 12px;
-							"
-						>
-							Clear All Saved Data
-						</button>
-					</div>
-				</div>
+                        <button
+                            class="btn-secondary"
+                            style="
+                                margin-top: 10px;
+                                padding: 8px 16px;
+                                font-size: 12px;
+                            "
+                        >
+                            Clear All Saved Data
+                        </button>
+                    </div>
+                </div>
 
-				<div class="section hideable" id="callSection">
-					<div id="incomingCall" class="incoming-call">
-						<div
-							style="
-								text-align: center;
-								font-size: 32px;
-								margin-bottom: 10px;
-							"
-						>
-							📞
-						</div>
-						<div class="incoming-caller" id="incomingCallerName">
-							Incoming Call
-						</div>
-						<div class="incoming-number" id="incomingCallerNumber">
-							Unknown Number
-						</div>
-						<div class="incoming-buttons">
-							<button class="btn-answer">✔ Answer</button>
-							<button class="btn-decline">✗ Decline</button>
-						</div>
-						<div
-							style="
-								text-align: center;
-								margin-top: 10px;
-								font-size: 11px;
-								opacity: 0.8;
-							"
-						>
-							Press Enter to answer • Escape to decline
-						</div>
-					</div>
+                <div class="section hideable" id="callSection">
+                    <div id="incomingCall" class="incoming-call">
+                        <div
+                            style="
+                                text-align: center;
+                                font-size: 32px;
+                                margin-bottom: 10px;
+                            "
+                        >
+                            📞
+                        </div>
+                        <div class="incoming-caller" id="incomingCallerName">
+                            Incoming Call
+                        </div>
+                        <div class="incoming-number" id="incomingCallerNumber">
+                            Unknown Number
+                        </div>
+                        <div class="incoming-buttons">
+                            <button class="btn-answer">✔ Answer</button>
+                            <button class="btn-decline">✗ Decline</button>
+                        </div>
+                        <div
+                            style="
+                                text-align: center;
+                                margin-top: 10px;
+                                font-size: 11px;
+                                opacity: 0.8;
+                            "
+                        >
+                            Press Enter to answer • Escape to decline
+                        </div>
+                    </div>
 
-					<div id="dialpadLayer" class="dialpad-layer">
-						<div class="form-group">
-							<input
-								type="text"
-								id="callNumber"
-								placeholder="Enter number to dial / DTMF during call"
-								inputmode="numeric"
-							/>
-						</div>
+                    <div id="dialpadLayer" class="dialpad-layer">
+                        <div class="form-group">
+                            <input
+                                type="text"
+                                id="callNumber"
+                                placeholder="Enter number to dial / DTMF during call"
+                                inputmode="numeric"
+                            />
+                        </div>
 
-						<div class="dialpad">
-							<button>1</button>
-							<button>2</button>
-							<button>3</button>
-							<button>4</button>
-							<button>5</button>
-							<button>6</button>
-							<button>7</button>
-							<button>8</button>
-							<button>9</button>
-							<button>*</button>
-							<button>0</button>
-							<button>#</button>
-						</div>
+                        <div class="dialpad">
+                            <button>1</button>
+                            <button>2</button>
+                            <button>3</button>
+                            <button>4</button>
+                            <button>5</button>
+                            <button>6</button>
+                            <button>7</button>
+                            <button>8</button>
+                            <button>9</button>
+                            <button>*</button>
+                            <button>0</button>
+                            <button>#</button>
+                        </div>
 
-						<div class="form-group" style="margin-top: 15px">
-							<label
-								style="
-									display: flex;
-									align-items: center;
-									cursor: pointer;
-								"
-							>
-								<input
-									type="checkbox"
-									id="hideCallerID"
-									style="width: auto; margin-right: 8px"
-								/>
-								Hide Caller ID (Privacy)
-							</label>
-						</div>
+                        <div class="form-group" style="margin-top: 15px">
+                            <label
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    cursor: pointer;
+                                "
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="hideCallerID"
+                                    style="width: auto; margin-right: 8px"
+                                />
+                                Hide Caller ID (Privacy)
+                            </label>
+                        </div>
 
-						<div class="button-group">
-							<button id="callBtn" class="btn-success" disabled>
-								📞 Call
-							</button>
-							<button id="clearBtn" class="btn-secondary">
-								Clear
-							</button>
-						</div>
-					</div>
+                        <div class="button-group">
+                            <button id="callBtn" class="btn-success" disabled>
+                                📞 Call
+                            </button>
+                            <button id="clearBtn" class="btn-secondary">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
 
-					<div id="callControls" class="call-controls">
-						<div class="call-info">
-							<div id="callStatus">Call in progress</div>
-							<div id="callDuration">00:00</div>
-						</div>
-						<div id="ringingIndicator">🔔 Ringing...</div>
-						<div
-							class="button-group"
-							style="max-width: 300px; margin: 0 auto"
-						>
-							<button id="muteBtn" class="btn-secondary">
-								Mute
-							</button>
-							<button id="holdBtn" class="btn-secondary">
-								Hold
-							</button>
-							<button id="hangupBtn" class="btn-danger">
-								Hang Up
-							</button>
-						</div>
-						<div
-							id="showDialpadBtn"
-							class="show-dialpad-button"
-							style="display: none"
-						>
-							<button class="btn-secondary">
-								📱 Show Dialpad
-							</button>
-						</div>
-					</div>
-				</div>
+                    <div id="callControls" class="call-controls">
+                        <div class="call-info">
+                            <div id="callStatus">Call in progress</div>
+                            <div id="callDuration">00:00</div>
+                        </div>
+                        <div id="ringingIndicator">🔔 Ringing...</div>
+                        <div
+                            class="button-group"
+                            style="margin: 0 auto; gap: 8px"
+                        >
+                            <button
+                                id="muteBtn"
+                                class="btn-secondary"
+                                style="flex: 1; min-width: 0"
+                            >
+                                Mute
+                            </button>
+                            <button
+                                id="holdBtn"
+                                class="btn-secondary"
+                                style="flex: 1; min-width: 0"
+                            >
+                                Hold
+                            </button>
+                            <button
+                                id="hangupBtn"
+                                class="btn-danger"
+                                style="flex: 1; min-width: 0"
+                            >
+                                Hang Up
+                            </button>
+                        </div>
+                        <div
+                            id="showDialpadBtn"
+                            class="show-dialpad-button"
+                            style="display: none"
+                        >
+                            <button class="btn-secondary">
+                                📱 Show Dialpad
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-				<div class="section log-section" id="logSection">
-					<h2>Event Log</h2>
-					<div id="log" class="log"></div>
-					<div
-						id="serverInfo"
-						style="
-							text-align: center;
-							margin-top: 10px;
-							color: #999;
-							font-size: 12px;
-						"
-					>
-						WebSocket: Loading... | SIP Domain: Loading...
-					</div>
+                <div class="section log-section" id="logSection">
+                    <h2>Event Log</h2>
+                    <div id="log" class="log"></div>
+                    <div
+                        id="serverInfo"
+                        style="
+                            text-align: center;
+                            margin-top: 10px;
+                            color: #999;
+                            font-size: 12px;
+                        "
+                    >
+                        WebSocket: Loading... | SIP Domain: Loading...
+                    </div>
 
-					<details
-						style="
-							margin-top: 15px;
-							padding: 10px;
-							background: #f8f8f8;
-							border-radius: 8px;
-						"
-					>
-						<summary
-							style="
-								cursor: pointer;
-								color: #667eea;
-								font-weight: 600;
-							"
-						>
-							⚠️ Troubleshooting Tips
-						</summary>
-						<div
-							style="
-								margin-top: 10px;
-								font-size: 13px;
-								color: #666;
-								line-height: 1.6;
-							"
-						>
-							<ul style="margin-left: 20px">
-								<li>
-									Ensure microphone permissions are granted
-								</li>
-								<li>
-									Try using Chrome or Firefox (latest
-									versions)
-								</li>
-								<li>
-									Check that your firewall allows WebRTC
-									traffic
-								</li>
-								<li>Disable VPN if you're using one</li>
-							</ul>
-							<p style="margin-top: 10px">
-								<strong
-									>Need assistance? Contact the
-									<a href="mailto:support@voicetel.com"
-										>VoiceTel Support Team</a
-									></strong
-								>
-							</p>
-						</div>
-					</details>
-				</div>
+                    <details
+                        style="
+                            margin-top: 15px;
+                            padding: 10px;
+                            background: #f8f8f8;
+                            border-radius: 8px;
+                        "
+                    >
+                        <summary
+                            style="
+                                cursor: pointer;
+                                color: #667eea;
+                                font-weight: 600;
+                            "
+                        >
+                            ⚠️ Troubleshooting Tips
+                        </summary>
+                        <div
+                            style="
+                                margin-top: 10px;
+                                font-size: 13px;
+                                color: #666;
+                                line-height: 1.6;
+                            "
+                        >
+                            <ul style="margin-left: 20px">
+                                <li>
+                                    Ensure microphone permissions are granted
+                                </li>
+                                <li>
+                                    Try using Chrome or Firefox (latest
+                                    versions)
+                                </li>
+                                <li>
+                                    Check that your firewall allows WebRTC
+                                    traffic
+                                </li>
+                                <li>Disable VPN if you're using one</li>
+                            </ul>
+                            <p style="margin-top: 10px">
+                                <strong
+                                    >Need assistance? Contact the
+                                    <a href="mailto:support@voicetel.com"
+                                        >VoiceTel Support Team</a
+                                    ></strong
+                                >
+                            </p>
+                        </div>
+                    </details>
+                </div>
 
-				<div class="section log-section" id="contactsSection">
-					<h2>Contacts</h2>
-					<div class="contacts-search" style="margin-bottom: 15px">
-						<input
-							type="text"
-							id="contactSearch"
-							placeholder="🔍 Search contacts..."
-							class="input-field"
-							style="
-								width: 100%;
-								padding: 12px 16px;
-								border: 2px solid #e1e5e9;
-								border-radius: 25px;
-								font-size: 14px;
-								background: #f8f9fa;
-								transition: all 0.3s ease;
-								outline: none;
-							"
-							onfocus="this.style.borderColor='#007bff'; this.style.backgroundColor='white'; this.style.boxShadow='0 0 0 3px rgba(0,123,255,0.1)';"
-							onblur="this.style.borderColor='#e1e5e9'; this.style.backgroundColor='#f8f9fa'; this.style.boxShadow='none';"
-						/>
-					</div>
-					<div id="contactsList" class="log">
-						<div
-							class="contact-item"
-							style="
-								text-align: center;
-								padding: 20px;
-								color: #666;
-							"
-						>
-							<button class="btn-primary">
-								📱 Load Contacts
-							</button>
-							<p style="margin-top: 10px; font-size: 14px">
-								Tap to load your device contacts
-							</p>
-						</div>
-					</div>
-					<div class="contacts-actions">
-						<button class="btn-secondary">🔄 Refresh</button>
-						<button class="btn-secondary">🗑️ Clear</button>
-					</div>
-				</div>
+                <div class="section log-section" id="contactsSection">
+                    <h2>Contacts</h2>
+                    <div class="contacts-search" style="margin-bottom: 15px">
+                        <input
+                            type="text"
+                            id="contactSearch"
+                            placeholder="🔍 Search contacts..."
+                            class="input-field"
+                            style="
+                                width: 100%;
+                                padding: 12px 16px;
+                                border: 2px solid #e1e5e9;
+                                border-radius: 25px;
+                                font-size: 14px;
+                                background: #f8f9fa;
+                                transition: all 0.3s ease;
+                                outline: none;
+                            "
+                            onfocus="this.style.borderColor='#007bff'; this.style.backgroundColor='white'; this.style.boxShadow='0 0 0 3px rgba(0,123,255,0.1)';"
+                            onblur="this.style.borderColor='#e1e5e9'; this.style.backgroundColor='#f8f9fa'; this.style.boxShadow='none';"
+                        />
+                    </div>
+                    <div id="contactsList" class="log">
+                        <div
+                            class="contact-item"
+                            style="
+                                text-align: center;
+                                padding: 20px;
+                                color: #666;
+                            "
+                        >
+                            <button class="btn-primary">
+                                📱 Load Contacts
+                            </button>
+                            <p style="margin-top: 10px; font-size: 14px">
+                                Tap to load your device contacts
+                            </p>
+                        </div>
+                    </div>
+                    <div class="contacts-actions">
+                        <button class="btn-secondary">🔄 Refresh</button>
+                        <button class="btn-secondary">🗑️ Clear</button>
+                    </div>
+                </div>
 
-				<div class="section log-section" id="historySection">
-					<h2>Call History</h2>
-					<div id="callHistory" class="log"></div>
-					<div class="history-actions">
-						<button class="btn-secondary">🔄 Refresh</button>
-						<button class="btn-secondary">🗑️ Clear History</button>
-						<button class="btn-secondary">
-							🎙️ Clear Recordings
-						</button>
-					</div>
-				</div>
-			</div>
+                <div class="section log-section" id="historySection">
+                    <h2>Call History</h2>
+                    <div id="callHistory" class="log"></div>
+                    <div class="history-actions">
+                        <button class="btn-secondary">🔄 Refresh</button>
+                        <button class="btn-secondary">🗑️ Clear History</button>
+                        <button class="btn-secondary">
+                            🎙️ Clear Recordings
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-			<div class="audio-container">
-				<audio id="remoteAudio" autoplay playsinline></audio>
-				<audio id="localAudio" autoplay muted playsinline></audio>
-			</div>
-		</div>
+            <div class="audio-container">
+                <audio id="remoteAudio" autoplay playsinline></audio>
+                <audio id="localAudio" autoplay muted playsinline></audio>
+            </div>
+        </div>
 
-		<script src="https://cdn.jsdelivr.net/npm/sip.js@0.15.11/dist/sip.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
-		<script>
-			// Contacts plugin will be available via Capacitor at runtime
-			// We'll access it through window.Capacitor.Plugins.Contacts
-		</script>
+        <script src="https://cdn.jsdelivr.net/npm/sip.js@0.15.11/dist/sip.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+        <script>
+            // Contacts plugin will be available via Capacitor at runtime
+            // We'll access it through window.Capacitor.Plugins.Contacts
+        </script>
 
-		<!-- Single loader script that loads all modules in correct order -->
-		<script src="js/loader.js"></script>
-	</body>
+        <!-- Single loader script that loads all modules in correct order -->
+        <script src="js/loader.js"></script>
+    </body>
 </html>
