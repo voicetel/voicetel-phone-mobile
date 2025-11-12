@@ -97,7 +97,7 @@ pids/
 !build/icons/
 !build/entitlements.mac.plist
 voicetel-release-key.keystore
- 
+
 # Xcode iOS build artifacts
 ios/App/build/
 ios/App/build_device/
@@ -109,3 +109,7 @@ ios/App/build/**/Products/
 # Android build artifacts
 .gradle/
 plugins/**/.gradle/
+
+# Export options (contain Team ID)
+exportOptions.plist
+exportOptions-dev.plist
