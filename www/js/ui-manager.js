@@ -15,15 +15,15 @@ window.log = function (message) {
   entry.textContent = `[${timestamp}] ${message}`;
   logDiv.insertBefore(entry, logDiv.firstChild);
 
-  // Limit to 100 entries in DOM
-  while (logDiv.children.length > 100) {
+  // Limit to 500 entries in DOM
+  while (logDiv.children.length > 500) {
     logDiv.removeChild(logDiv.lastChild);
   }
 
   // Persist to localStorage
   try {
     const logs = [];
-    for (let i = 0; i < Math.min(logDiv.children.length, 100); i++) {
+    for (let i = 0; i < Math.min(logDiv.children.length, 500); i++) {
       logs.push(logDiv.children[i].textContent);
     }
     localStorage.setItem("eventLog", JSON.stringify(logs));
