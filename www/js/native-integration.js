@@ -24,7 +24,10 @@ window.startCallService = async function (callNumber) {
 
 window.stopCallService = async function () {
   try {
+    // Only for Android - iOS handles CallKit separately in endCall()
+    const isAndroid = window.Capacitor?.getPlatform?.() === "android";
     if (
+      isAndroid &&
       window.Capacitor &&
       window.Capacitor.isNativePlatform() &&
       window.Capacitor.Plugins &&

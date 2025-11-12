@@ -26,6 +26,11 @@ async function initializeApp() {
   // Load saved configuration
   await window.Storage.loadConfig();
 
+  // Restore event log from localStorage (in case WebView was suspended)
+  if (typeof window.restoreEventLog === "function") {
+    window.restoreEventLog();
+  }
+
   // Setup app state listeners for re-registration
   window.setupAppStateListeners();
 

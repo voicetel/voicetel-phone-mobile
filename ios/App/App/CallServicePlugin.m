@@ -13,6 +13,9 @@ CAP_PLUGIN(CallServicePlugin, "CallService",
   CAP_PLUGIN_METHOD(reportOutgoingCallStartedConnecting, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(setCallMuted, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(setCallHeld, CAPPluginReturnPromise);
+  CAP_PLUGIN_METHOD(startNativeRecording, CAPPluginReturnPromise);
+  CAP_PLUGIN_METHOD(stopNativeRecording, CAPPluginReturnPromise);
+  CAP_PLUGIN_METHOD(isNativeRecording, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(saveRecording, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(getSupportedFormats, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(getRecordingFileUrl, CAPPluginReturnPromise);

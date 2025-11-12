@@ -21,22 +21,8 @@ window.hangup = function () {
     window.log("⚠️ No currentSession to hang up");
   }
 
-  // iOS only: End CallKit call if active (but only if not triggered FROM CallKit)
-  if (
-    isIOS &&
-    window.Capacitor?.Plugins?.CallService &&
-    !window.__hangupFromCallKit
-  ) {
-    window.log("📱 [iOS] Ending CallKit call...");
-    window.Capacitor.Plugins.CallService.stopCall()
-      .then(() => {
-        window.log("✅ [iOS] CallKit call ended successfully");
-      })
-      .catch((err) => {
-        window.log("❌ [iOS] Error ending CallKit call: " + err.message);
-        console.error("Error ending CallKit call:", err);
-      });
-  }
+  // iOS only: CallKit cleanup is handled by endCall() to ensure recording stops first
+  // Don't call stopCall() here to avoid race condition with recording
 
   // Reset audio started flag for next call
   window.audioStarted = false;
@@ -188,6 +174,13 @@ window.toggleHold = function () {
 };
 
 window.endCall = async function () {
+  // Prevent multiple simultaneous calls (bye + terminated events can both trigger this)
+  if (window.__endCallInProgress) {
+    window.log("⚠️ endCall already in progress, skipping duplicate call");
+    return;
+  }
+  window.__endCallInProgress = true;
+
   // Clean up resources
   window.cleanupWebSocketHandler();
 
@@ -278,6 +271,9 @@ window.endCall = async function () {
   if (holdBtn) {
     holdBtn.textContent = "Hold";
   }
+
+  // Reset the guard flag at the very end
+  window.__endCallInProgress = false;
   document.getElementById("callStatus").textContent = "Call in progress";
   document.getElementById("callNumber").placeholder =
     "Enter number to dial / DTMF during call";

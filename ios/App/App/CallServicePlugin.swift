@@ -19,6 +19,11 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     private var currentCallUUID: UUID?
     private var audioSessionActivated: Bool = false
 
+    // Native recording components
+    private var audioRecorder: AVAudioRecorder?
+    private var isRecording: Bool = false
+    private var currentRecordingURL: URL?
+
     override public init() {
         super.init()
     }
@@ -98,6 +103,9 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     @objc public func stopCall(_ call: CAPPluginCall) {
+        // Note: Recording is stopped by JavaScript before this is called
+        // We don't auto-stop here to avoid race conditions
+
         // End CallKit call if active
         if let callUUID = currentCallUUID {
             let endCallAction = CXEndCallAction(call: callUUID)
@@ -432,6 +440,127 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
                 }
             }
         }
+    }
+
+    @objc public func startNativeRecording(_ call: CAPPluginCall) {
+        guard isCallActive else {
+            call.reject("No active call")
+            return
+        }
+
+        guard !isRecording else {
+            call.reject("Recording already in progress")
+            return
+        }
+
+        do {
+            let dir = try ensureRecordingsDirectory()
+
+            // Get caller number and timestamp from JavaScript (to match Android naming)
+            let callerNumber = call.getString("callerNumber") ?? "unknown"
+            let timestamp: String
+
+            if let timestampMs = call.getDouble("timestamp") {
+                let date = Date(timeIntervalSince1970: timestampMs / 1000.0)
+                timestamp = ISO8601DateFormatter().string(from: date).replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: ".", with: "-")
+            } else {
+                timestamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: ".", with: "-")
+            }
+
+            // Match Android naming: recording_timestamp_callerNumber.m4a
+            let filename = "recording_\(timestamp)_\(callerNumber).m4a"
+            let fileURL = dir.appendingPathComponent(filename)
+
+            // Configure audio session for recording
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .defaultToSpeaker])
+            try audioSession.setActive(true)
+
+            // Configure recording settings for voice (AAC in M4A container)
+            let settings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 44100.0,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+
+            audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
+            audioRecorder?.prepareToRecord()
+            audioRecorder?.record()
+
+            currentRecordingURL = fileURL
+            isRecording = true
+
+            logger.info("Native recording started: \(filename)")
+            call.resolve([
+                "success": true,
+                "filename": filename,
+                "filePath": fileURL.path
+            ])
+        } catch {
+            logger.error("Failed to start native recording: \(error.localizedDescription)")
+            call.reject("Failed to start recording: \(error.localizedDescription)")
+        }
+    }
+
+    @objc public func stopNativeRecording(_ call: CAPPluginCall) {
+        logger.info("🛑 stopNativeRecording called from JavaScript, isRecording=\(self.isRecording)")
+
+        guard isRecording else {
+            logger.warning("⚠️ stopNativeRecording: No recording in progress (possibly already stopped)")
+            call.reject("No recording in progress")
+            return
+        }
+
+        logger.info("📱 stopNativeRecording: Calling stopRecordingInternal...")
+        let result = stopRecordingInternal()
+        logger.info("✅ stopNativeRecording: stopRecordingInternal returned success=\(result.success)")
+
+        if result.success {
+            logger.info("📊 stopNativeRecording: Resolving with filename=\(result.filename ?? "nil"), duration=\(result.duration)s")
+            call.resolve([
+                "success": true,
+                "filename": result.filename ?? "",
+                "filePath": result.filePath ?? "",
+                "duration": result.duration
+            ])
+            logger.info("✓ stopNativeRecording: call.resolve completed successfully")
+        } else {
+            logger.error("❌ stopNativeRecording: Failed to stop recording")
+            call.reject("Failed to stop recording")
+        }
+    }
+
+    @objc public func isNativeRecording(_ call: CAPPluginCall) {
+        call.resolve(["isRecording": isRecording])
+    }
+
+    private func stopRecordingInternal() -> (success: Bool, filename: String?, filePath: String?, duration: TimeInterval) {
+        logger.info("🔧 stopRecordingInternal called, isRecording=\(self.isRecording), recorder exists=\(self.audioRecorder != nil)")
+
+        guard isRecording, let recorder = audioRecorder else {
+            logger.warning("⚠️ stopRecordingInternal: Guard failed (already stopped or no recorder)")
+            return (false, nil, nil, 0)
+        }
+
+        logger.info("⏸️ stopRecordingInternal: Calling recorder.stop()...")
+        recorder.stop()
+        let duration = recorder.currentTime
+        logger.info("✓ stopRecordingInternal: Recorder stopped, duration=\(duration)s")
+
+        let filename = currentRecordingURL?.lastPathComponent
+        let filePath = currentRecordingURL?.path
+
+        logger.info("📁 stopRecordingInternal: filename=\(filename ?? "nil"), path=\(filePath ?? "nil")")
+
+        // Reset state AFTER capturing the values
+        audioRecorder = nil
+        currentRecordingURL = nil
+        isRecording = false
+
+        logger.info("✅ Native recording stopped successfully. Duration: \(duration)s, File: \(filename ?? "unknown")")
+
+        return (true, filename, filePath, duration)
     }
 
     @objc public func saveRecording(_ call: CAPPluginCall) {

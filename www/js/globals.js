@@ -20,6 +20,7 @@ window.registrationPromise = null;
 window.unregistrationPromise = null;
 window.reRegisterTimeout = null;
 window.activeCall = false;
+window.__endCallInProgress = false;
 window.isRecording = false;
 window.mediaRecorder = null;
 window.recordedChunks = [];
