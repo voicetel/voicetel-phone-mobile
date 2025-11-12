@@ -103,8 +103,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     @objc public func stopCall(_ call: CAPPluginCall) {
-        // Note: Recording is stopped by JavaScript before this is called
-        // We don't auto-stop here to avoid race conditions
+        logger.info("📞 stopCall called - isCallActive=\(self.isCallActive), hasUUID=\(self.currentCallUUID != nil)")
 
         // End CallKit call if active
         if let callUUID = currentCallUUID {
@@ -112,7 +111,9 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
             let transaction = CXTransaction(action: endCallAction)
 
             callController?.request(transaction) { error in
-                // Error logged if needed
+                if let error = error {
+                    self.logger.error("❌ Failed to end CallKit call: \(error.localizedDescription)")
+                }
             }
 
             currentCallUUID = nil
@@ -121,23 +122,19 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
             return
         }
 
-        if !audioSessionActivated {
-            self.isCallActive = false
-            call.resolve(["success": true])
-            return
+        // No CallKit call, but clean up audio session if needed
+        if audioSessionActivated {
+            do {
+                let session = AVAudioSession.sharedInstance()
+                try session.setActive(false, options: .notifyOthersOnDeactivation)
+                audioSessionActivated = false
+            } catch {
+                logger.error("⚠️ Failed to deactivate audio session: \(error.localizedDescription)")
+            }
         }
 
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setActive(false, options: .notifyOthersOnDeactivation)
-            self.isCallActive = false
-            audioSessionActivated = false
-            call.resolve(["success": true])
-        } catch {
-            self.isCallActive = false
-            audioSessionActivated = false
-            call.resolve(["success": true])
-        }
+        self.isCallActive = false
+        call.resolve(["success": true])
     }
 
     @objc public func updateCallNumber(_ call: CAPPluginCall) {
@@ -242,7 +239,7 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
 
     @objc public func reportCallFailed(_ call: CAPPluginCall) {
         // Report that the call failed (network error, rejected, etc.)
-        if let callUUID = currentCallUUID, let provider = callProvider {
+        if let callUUID = currentCallUUID {
             // End the call with a failure reason
             let endAction = CXEndCallAction(call: callUUID)
             let transaction = CXTransaction(action: endAction)
@@ -308,7 +305,21 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     // MARK: - CXProviderDelegate
 
     public func providerDidReset(_ provider: CXProvider) {
+        logger.info("📞 providerDidReset called - resetting all CallKit state")
+
+        // Reset all state
         currentCallUUID = nil
+        isCallActive = false
+        audioSessionActivated = false
+
+        // Stop any active recording
+        if isRecording {
+            logger.info("🛑 providerDidReset: Stopping active recording")
+            _ = stopRecordingInternal()
+        }
+
+        // Notify JavaScript to reset its state
+        notifyBridge(action: "CALLKIT_RESET")
     }
 
     public func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
@@ -343,6 +354,8 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
+        logger.info("📞 CXEndCallAction - audioSessionActivated=\(self.audioSessionActivated)")
+
         // Differentiate between declining incoming call vs ending active call
         if currentCallUUID == action.callUUID {
             if audioSessionActivated {
@@ -353,6 +366,12 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
 
             currentCallUUID = nil
             self.isCallActive = false
+
+            // Stop any active recording when call ends from CallKit
+            if isRecording {
+                logger.info("🛑 CXEndCallAction: Stopping active recording")
+                _ = stopRecordingInternal()
+            }
         }
 
         action.fulfill()
@@ -404,9 +423,17 @@ public class CallServicePlugin: CAPPlugin, CXProviderDelegate {
     }
 
     public func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
+        logger.info("📞 didDeactivate audio session - cleaning up state")
+
         currentCallUUID = nil
         isCallActive = false
         audioSessionActivated = false
+
+        // Stop any active recording when audio session deactivates
+        if isRecording {
+            logger.info("🛑 didDeactivate: Stopping active recording")
+            _ = stopRecordingInternal()
+        }
 
         notifyBridge(action: "AUDIO_SESSION_DEACTIVATED")
     }

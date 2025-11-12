@@ -221,6 +221,15 @@ window.handleNotificationAction = function (action, data) {
 
   if (action === "ANSWER_CALL") {
     window.log("✅ [CallKit] Answer button pressed in CallKit");
+
+    // Check if already answering (e.g., from RTC button press)
+    if (window.__answeringInProgress) {
+      window.log(
+        "⚠️ Answer already in progress (from RTC), ignoring CallKit answer",
+      );
+      return;
+    }
+
     window.__callKitAnswered = true; // Flag to prevent duplicate notifications
     if (window.incomingSession) {
       window.answerCall();
@@ -228,14 +237,24 @@ window.handleNotificationAction = function (action, data) {
       window.log("No incoming call to answer");
     }
   } else if (action === "DECLINE_CALL") {
+    // DECLINE_CALL can be sent for:
+    // 1. Incoming calls that are declined
+    // 2. Outgoing calls that are cancelled before answer (when audioSessionActivated=false)
     if (window.incomingSession) {
       window.__decliningFromCallKit = true;
       window.declineCall();
       window.__decliningFromCallKit = false;
+    } else if (window.currentSession) {
+      // Outgoing call being cancelled from CallKit
+      window.log("📱 [CallKit] Cancelling outgoing call from CallKit");
+      window.__hangupFromCallKit = true;
+      window.hangup();
+      window.__hangupFromCallKit = false;
     } else {
-      window.log("No incoming call to decline");
+      window.log("No call to decline/cancel");
     }
   } else if (action === "HANGUP") {
+    // HANGUP is sent for active calls (when audioSessionActivated=true)
     if (window.currentSession) {
       window.__hangupFromCallKit = true;
       window.hangup();
@@ -243,6 +262,53 @@ window.handleNotificationAction = function (action, data) {
     } else {
       window.log("No active call to hang up");
     }
+  } else if (action === "CALLKIT_RESET") {
+    window.log("⚠️ [CallKit] CallKit reset - cleaning up all state");
+
+    // Reset all CallKit state flags
+    window.callKitAudioSessionActive = false;
+    window.pendingAudioStart = false;
+    window.__answeringInProgress = false;
+    window.__callKitAnswered = false;
+    window.audioStarted = false;
+    window.isCallActive = false;
+
+    // End any active session
+    if (window.currentSession) {
+      window.log("⚠️ [CallKit] Ending SIP session due to CallKit reset");
+      try {
+        if (window.currentSession.state === "Established") {
+          window.currentSession.bye();
+        } else {
+          window.currentSession.cancel();
+        }
+      } catch (e) {
+        window.log("⚠️ Error ending session: " + e.message);
+      }
+      window.currentSession = null;
+    }
+
+    // Clear incoming session
+    if (window.incomingSession) {
+      window.incomingSession = null;
+    }
+
+    // Stop recording if active
+    if (window.isRecording) {
+      window.log("⚠️ [CallKit] Stopping recording due to CallKit reset");
+      window.stopRecording().catch(() => {});
+    }
+
+    // Clean up audio
+    if (window.localAudioTrack) {
+      try {
+        window.localAudioTrack.stop();
+      } catch (e) {}
+      window.localAudioTrack = null;
+    }
+
+    // Reset UI
+    window.hideCallControls();
   } else if (action === "AUDIO_SESSION_ACTIVATED") {
     window.callKitAudioSessionActive = true;
 

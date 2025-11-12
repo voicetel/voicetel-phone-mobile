@@ -388,6 +388,9 @@ window.answerCall = async function () {
       window.log("📱 RTC button pressed - notifying CallKit...");
       try {
         if (window.Capacitor?.Plugins?.CallService) {
+          // Set flag to prevent loop when CallKit delegate calls answerCall() again
+          window.__callKitAnswered = true;
+
           await window.Capacitor.Plugins.CallService.reportCallConnected({
             isOutgoing: false,
           });
@@ -441,11 +444,9 @@ window.answerCall = async function () {
   window.log("Call answered");
   window.log("SIP/2.0 200 OK");
 
+  // Reset answering flag immediately after session is established
   if (isIOS) {
-    setTimeout(() => {
-      window.__answeringInProgress = false;
-      window.log("✅ Answer process complete");
-    }, 1000);
+    window.__answeringInProgress = false;
   }
 };
 
