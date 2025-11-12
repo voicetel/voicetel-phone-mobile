@@ -760,8 +760,7 @@ window.setupSessionHandlers = function (session) {
       document.getElementById("enableCallRecording")?.checked || false;
     if (recordingEnabled && window.activeCall && session === currentSession) {
       // Wait for audio tracks to be fully ready after call is answered
-      // iOS needs longer delay for iosrtc audio tracks to stabilize
-      const recordingDelay = isIOS ? 2000 : 500;
+      const recordingDelay = 500;
       window.log(
         `⏳ Recording will auto-start in ${recordingDelay}ms after call connected`,
       );

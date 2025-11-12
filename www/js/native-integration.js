@@ -429,11 +429,29 @@ window.handleNotificationAction = function (action, data) {
       window.__updatingHoldFromCallKit = false;
     }
   } else if (action === "PLAY_DTMF") {
-    window.log("🔢 [CallKit] DTMF digit pressed in CallKit: " + data);
+    window.log("🔢 [CallKit] DTMF digits pressed in CallKit: " + data);
     if (data && window.sendDTMF) {
-      window.sendDTMF(data);
+      // CallKit can send multiple digits as a string (e.g., "123")
+      // Send each digit individually with proper spacing
+      for (let i = 0; i < data.length; i++) {
+        const digit = data[i];
+        window.sendDTMF(digit);
+        window.log(`🔢 Sent DTMF digit: ${digit}`);
+      }
     } else {
       window.log("⚠️ No DTMF data or sendDTMF function not available");
+    }
+  } else if (action === "MUTE_CALL") {
+    if (!window.isMuted) {
+      window.__updatingMuteFromCallKit = true;
+      window.toggleMute();
+      window.__updatingMuteFromCallKit = false;
+    }
+  } else if (action === "UNMUTE_CALL") {
+    if (window.isMuted) {
+      window.__updatingMuteFromCallKit = true;
+      window.toggleMute();
+      window.__updatingMuteFromCallKit = false;
     }
   }
 };
