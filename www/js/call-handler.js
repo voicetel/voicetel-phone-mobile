@@ -630,6 +630,68 @@ window.setupSessionHandlers = function (session) {
     endCall();
   });
 
+  // Monitor ICE connection state as backup detection for remote hangup
+  // This catches cases where SIP BYE doesn't fire properly (especially with iosrtc)
+  if (
+    session.sessionDescriptionHandler &&
+    session.sessionDescriptionHandler.peerConnection
+  ) {
+    const pc = session.sessionDescriptionHandler.peerConnection;
+    let connectionWasEstablished = false;
+
+    const handleConnectionStateChange = () => {
+      const state = pc.iceConnectionState;
+      window.log(`ICE connection state: ${state}`);
+
+      if (state === "connected" || state === "completed") {
+        connectionWasEstablished = true;
+      }
+
+      // If connection was established and then goes to disconnected/failed/closed,
+      // and we still have an active call, treat this as remote hangup
+      if (
+        connectionWasEstablished &&
+        (state === "disconnected" || state === "failed" || state === "closed")
+      ) {
+        if (window.activeCall && window.currentSession === session) {
+          window.log(
+            "⚠️ ICE connection lost - call ended by remote (detected via ICE state)",
+          );
+          // Remove this listener to prevent duplicate calls
+          pc.removeEventListener(
+            "iceconnectionstatechange",
+            handleConnectionStateChange,
+          );
+          // Give SIP BYE handler a moment to fire first
+          setTimeout(() => {
+            // Only call endCall if we're still in active call (SIP BYE might have already handled it)
+            if (window.activeCall && window.currentSession === session) {
+              window.log("🔴 Ending call due to ICE disconnection");
+              if (ringingStarted) {
+                window.stopRinging();
+                ringingStarted = false;
+              }
+              endCall();
+            }
+          }, 500);
+        }
+      }
+    };
+
+    pc.addEventListener(
+      "iceconnectionstatechange",
+      handleConnectionStateChange,
+    );
+
+    // Clean up listener when session ends
+    session.on("terminated", () => {
+      pc.removeEventListener(
+        "iceconnectionstatechange",
+        handleConnectionStateChange,
+      );
+    });
+  }
+
   session.on("accepted", (response) => {
     if (response && response.status_code && response.reason_phrase) {
       window.log(`SIP/2.0 ${response.status_code} ${response.reason_phrase}`);
@@ -696,7 +758,12 @@ window.setupSessionHandlers = function (session) {
     const recordingEnabled =
       document.getElementById("enableCallRecording")?.checked || false;
     if (recordingEnabled && window.activeCall && session === currentSession) {
-      // Wait a bit for audio tracks to be fully ready after call is answered
+      // Wait for audio tracks to be fully ready after call is answered
+      // iOS needs longer delay for iosrtc audio tracks to stabilize
+      const recordingDelay = isIOS ? 2000 : 500;
+      window.log(
+        `⏳ Recording will auto-start in ${recordingDelay}ms after call connected`,
+      );
       setTimeout(async () => {
         // Double-check call is still active before starting recording
         if (
@@ -706,7 +773,7 @@ window.setupSessionHandlers = function (session) {
         ) {
           await window.startRecording();
         }
-      }, 500); // Small delay to ensure audio tracks are ready
+      }, recordingDelay);
     }
 
     if (
