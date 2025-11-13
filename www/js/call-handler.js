@@ -752,28 +752,63 @@ window.setupSessionHandlers = function (session) {
     // Handle Bluetooth audio routing
     handleBluetoothAudio();
 
-    // Configure audio session for lock screen continuity
     configureAudioSession();
 
-    // Auto-start recording if enabled (only when call is answered/connected)
     const recordingEnabled =
       document.getElementById("enableCallRecording")?.checked || false;
     if (recordingEnabled && window.activeCall && session === currentSession) {
-      // Wait for audio tracks to be fully ready after call is answered
-      const recordingDelay = 500;
-      window.log(
-        `⏳ Recording will auto-start in ${recordingDelay}ms after call connected`,
-      );
-      setTimeout(async () => {
-        // Double-check call is still active before starting recording
-        if (
-          window.activeCall &&
-          window.currentSession &&
-          window.currentSession === session
-        ) {
-          await window.startRecording();
-        }
-      }, recordingDelay);
+      const pc = session?.sessionDescriptionHandler?.peerConnection;
+      if (pc) {
+        const startRecordingWhenReady = async () => {
+          const iceState = pc.iceConnectionState;
+
+          if (iceState === "connected" || iceState === "completed") {
+            if (window.activeCall && window.currentSession === session) {
+              await window.startRecording();
+            }
+          } else {
+            const iceConnectionHandler = async () => {
+              if (
+                pc.iceConnectionState === "connected" ||
+                pc.iceConnectionState === "completed"
+              ) {
+                pc.removeEventListener(
+                  "iceconnectionstatechange",
+                  iceConnectionHandler,
+                );
+                if (window.activeCall && window.currentSession === session) {
+                  await window.startRecording();
+                }
+              }
+            };
+
+            pc.addEventListener(
+              "iceconnectionstatechange",
+              iceConnectionHandler,
+            );
+
+            setTimeout(() => {
+              pc.removeEventListener(
+                "iceconnectionstatechange",
+                iceConnectionHandler,
+              );
+              if (
+                window.activeCall &&
+                window.currentSession === session &&
+                !window.isRecording
+              ) {
+                window
+                  .startRecording()
+                  .catch((e) =>
+                    window.log(`❌ Recording failed: ${e.message}`),
+                  );
+              }
+            }, 3000);
+          }
+        };
+
+        startRecordingWhenReady();
+      }
     }
 
     if (
